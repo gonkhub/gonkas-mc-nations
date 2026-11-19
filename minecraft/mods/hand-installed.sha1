@@ -1,0 +1,8 @@
+# Hand-installed mod jars: expected sha1.
+# These have no packwiz index entry, so nothing else verifies them.
+# Run scripts/verify-hand-installed.sh before a release or a server deploy.
+#
+# thee 1.0.0 has shipped as at least four DIFFERENT builds all stamped 1.0.0.
+# The 434300-byte build has no Mechanical Broker. This one does (35 entries).
+# A client/server mismatch here is a hard connect failure, not a soft degrade.
+eb435e9e434a7993c16fb76bb7687c645b7e8455 *minecraft/mods/thee-1.0.0.jar

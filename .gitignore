@@ -1,0 +1,84 @@
+# ── Gonka's MC Nations ──────────────────────────────────────────────
+# This repo is the PACK and nothing else: configs, scripts, and the mod
+# manifest — what someone needs to rebuild and run this exact build.
+#
+# It deliberately does not track worlds, caches, logs, third-party mod
+# jars, or documentation. Design notes, planning and write-ups stay off
+# GitHub entirely; see /docs/ below.
+
+# ── Documentation and design notes stay out of the repo ──
+# Not secret, just not what this repo is for. Keep them local.
+/docs/
+/*.md
+!/README.md
+/notes/
+
+# ── Worlds and per-world data ──
+/minecraft/saves/
+/minecraft/Distant_Horizons_server_data/
+/minecraft/server-resource-packs/
+
+# ── Generated caches and build noise ──
+/minecraft/.mixin.out/
+/minecraft/.probe/
+/minecraft/.sable/
+/minecraft/.vscode/
+/minecraft/dynamic-data-pack-cache/
+/minecraft/dynamic-resource-pack-cache/
+/minecraft/downloads/
+/minecraft/coremods/
+/minecraft/texturepacks/
+
+# ── Logs, crashes, debug dumps ──
+/minecraft/logs/
+/minecraft/crash-reports/
+/minecraft/debug/
+/minecraft/screenshots/
+/minecraft/bluemap/logs/
+
+# ── Per-world / per-server state (the JEI path embeds the server IP) ──
+/minecraft/config/jei/world/
+/minecraft/bluemap/pluginState.json
+
+# ── Per-player state, not pack content ──
+/minecraft/xaero/
+/minecraft/usercache.json
+/minecraft/usernamecache.json
+/minecraft/patchouli_data.json
+/minecraft/patchouli_books/
+/minecraft/ponders_watched.json
+/minecraft/command_history.txt
+
+# ── Contains the live server address ──
+/minecraft/servers.dat
+/minecraft/servers.dat_old
+
+# ── Contains a generated auth token ──
+/minecraft/kubejs/config/web_server.json
+
+# ── Mod jars: track the packwiz index, not the downloads ──
+# mods/.index/*.pw.toml carries the URL + sha512 for every mod that
+# Prism installed, so third-party jars are reproducible without being
+# redistributed here. The exceptions below are added by hand and have
+# no index entry, so they must be tracked or the pack won't build.
+#
+# These are version globs on purpose. Exact filenames meant that
+# shipping thee-1.0.1.jar would silently drop the pack's own mod from
+# the repo. Match the name, not the version.
+/minecraft/mods/*
+!/minecraft/mods/.index/
+
+# the checksum manifest for the jars below — without this line the guard
+# against a wrong hand-installed build silently never reaches the repo
+!/minecraft/mods/hand-installed.sha1
+
+# custom, unreproducible — losing these loses the pack
+!/minecraft/mods/thee-*.jar
+!/minecraft/mods/chaosgate-*.jar
+!/minecraft/mods/omnifix-*.jar
+
+# third-party, hand-installed (no packwiz index entry)
+!/minecraft/mods/kubejs-neoforge-*.jar
+!/minecraft/mods/kubejs-create-neoforge-*.jar
+!/minecraft/mods/lootjs-neoforge-*.jar
+!/minecraft/mods/morejs-neoforge-*.jar
