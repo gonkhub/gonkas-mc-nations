@@ -1,0 +1,21 @@
+{
+  "name": "Gonka's MC Nations",
+  "slug": "GonkasMCNations",
+  "version": "0.0.1",
+  "minecraft": "1.21.1",
+  "neoforge": "21.1.265",
+  "github": "gonkhub/gonkas-mc-nations",
+
+  "_comment": [
+    "THE single source of truth for the pack version. Everything derives from it:",
+    "the client zip filename, the git tag, the GitHub release, the changelog heading",
+    "and the deployed-state folder under dist/.",
+    "",
+    "Bump it with `python scripts/release.py bump <major|minor|patch>`, never by hand -",
+    "the bump also writes instance.cfg's ExportVersion and opens the changelog entry, and",
+    "doing one without the others is how a release ends up mislabelled.",
+    "",
+    "neoforge must equal the NeoForge version in mmc-pack.json. release.py checks it,",
+    "because the server's loader has to match the client's exactly."
+  ]
+}

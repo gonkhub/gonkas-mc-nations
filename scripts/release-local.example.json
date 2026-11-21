@@ -1,0 +1,36 @@
+{
+  "_comment": [
+    "Copy this file to `release-local.json` beside it and fill it in.",
+    "",
+    "`release-local.json` is gitignored and MUST STAY THAT WAY. It holds the live server",
+    "address and the FTP account name, which is why the build scripts read them from here",
+    "instead of hardcoding them: check-no-secrets.sh blocks a literal IP in any tracked",
+    "file, so a script with the address baked in can never be committed, which in turn",
+    "means the release tooling itself cannot live in the repo. This file is the seam that",
+    "lets the tooling be tracked and the address not be.",
+    "",
+    "THERE IS NO PASSWORD IN HERE AND THERE MUST NEVER BE ONE.",
+    "The FTP password lives in Windows Credential Manager under `credential_target`.",
+    "Store it once, yourself:",
+    "",
+    "    cmdkey /generic:GonkasMCNations:ftp /user:YOUR.FTPUSER /pass",
+    "",
+    "cmdkey prompts for the password without echoing it and without putting it in your",
+    "shell history. scripts/deploy-ftp.py reads it back at runtime via the Windows",
+    "CredRead API. It is never printed, never logged and never passed on a command line."
+  ],
+
+  "server_address": "0.0.0.0:25565",
+  "server_name": "Gonka's MC Nations",
+
+  "ftp": {
+    "host": "0.0.0.0",
+    "port": 21,
+    "credential_target": "GonkasMCNations:ftp",
+    "remote_root": "/",
+    "tls": true
+  },
+
+  "backup_dir": "F:/gonkas-backups/server-worlds",
+  "world_name": "nations"
+}
