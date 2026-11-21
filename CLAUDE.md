@@ -92,19 +92,21 @@ Hit on 2026-11-21: `release.py bump minor` set `ExportVersion=0.1.0`, the launch
 it back to `0.0.1`, and only `git status` caught it. **After any launch of the instance,
 check `git diff instance.cfg` before releasing.**
 
-## The server and the GitHub release never diverge
+## The newest GitHub release must always join the live server
 
-**Any time the Host Havoc server is updated, publish a GitHub release for that same
-version.** Not "soon", not "at the next milestone" - the two are one step. A server
-running a build players cannot download is a build nobody can reproduce, debug against,
-or roll back to.
+**That is the goal, stated by the user: a player who downloads the most recent release
+can join the server with it, with nothing to work out.** Everything below follows from it.
 
-Practically this means `release.py deploy` and `release.py publish` belong in the same
-sitting, and a deploy that cannot be published yet (because the build is known bad) should
-be rolled forward to one that can, rather than left unpublished.
+- **Any time the Host Havoc server is updated, publish a GitHub release for the same
+  build, in the same sitting.** Not "soon", not at the next milestone. A server running
+  something players cannot download is a server nobody can join cleanly.
+- If a build is deployed and then found bad, **roll forward** to one that can be
+  published rather than leaving the server ahead of the public release. That is what
+  0.1.0 -> 0.1.1 was.
+- `release.py deploy` and `release.py publish` belong together. Check before stopping:
+  does the newest release match what is on the server?
 
-Standing instruction from the user, 2026-11-21, after 0.1.0 went to the server and sat
-unpublished.
+Standing instruction, 2026-11-21, after 0.1.0 went to the server and sat unpublished.
 
 ## GitHub rejects any tracked file over 100 MB
 
