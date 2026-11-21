@@ -466,12 +466,25 @@ def cmd_deploy(args):
         print("Stopped. Nothing was uploaded.")
         return 1
 
-    if not args.skip_backup:
+    # `backup_world` in release-local.json is the per-environment say on whether the
+    # world is worth ten minutes of FTP. It is false while this is a dev world that
+    # gets thrown away before launch; the setting carries the reason and the reminder
+    # to turn it back on. --skip-backup still overrides for a one-off.
+    want_world_backup = packmeta.local().get("backup_world", True)
+    if not args.skip_backup and want_world_backup:
         print()
         print("-- world backup")
         python_script("deploy-ftp.py", "backup-world")
     else:
-        print("WARN     --skip-backup: no world backup taken for this deploy")
+        print("WARN     no world backup taken for this deploy")
+
+    # The small server-owned files - ops, bans, whitelist, server.properties - are
+    # copied EVERY time regardless, because they take seconds and exist nowhere else.
+    # Everything under config/ and mods/ is built from this repo and is already backed
+    # up by being in git; the world is backed up only when it is worth it.
+    print()
+    print("-- server state (ops, bans, whitelist, server.properties)")
+    python_script("deploy-ftp.py", "backup-state")
 
     print()
     print("-- upload")
@@ -549,18 +562,24 @@ def cmd_publish(args):
     run(["git", "push", "origin", "HEAD"])
     run(["git", "push", "origin", tag])
 
+    # THE RELEASE BODY IS THE CHANGELOG ENTRY AND NOTHING ELSE.
+    #
+    # This used to append a footer - download name and size, Prism import instructions,
+    # Minecraft and NeoForge versions, the sha1 - and before that the changelog entries
+    # themselves were written as prose about what the pack is. 0.0.1 shipped a page of it,
+    # including a section headed "carried over from The Factory Must Gonk", which is the
+    # name of a different instance that exists only on the author's machine. Nobody
+    # downloading a zip can act on that.
+    #
+    # None of the footer is lost. GitHub prints the asset name and size under every
+    # release, the sha1 ships beside the zip as its own asset, and the import instructions
+    # travel INSIDE the zip as HOW-TO-JOIN.txt, which is where somebody who has already
+    # downloaded it will actually look.
+    #
+    # So: write the entry, verbatim, and add nothing. If a release needs explaining beyond
+    # its changelog, the fix is a better changelog entry.
     notes_file = DIST / ("release-notes-%s.md" % version)
-    checksum = sha1_file(zip_path)
-    notes_file.write_text(
-        "%s\n\n---\n\n"
-        "**Download:** `%s` (%.0f MB)\n\n"
-        "Import it with Prism Launcher: **Add Instance -> Import from zip**. "
-        "`HOW-TO-JOIN.txt` inside the zip has the rest.\n\n"
-        "Minecraft %s, NeoForge %s.\n\n"
-        "sha1 `%s`\n"
-        % (notes, zip_path.name, zip_path.stat().st_size / 1048576,
-           meta["minecraft"], meta["neoforge"], checksum),
-        encoding="utf-8")
+    notes_file.write_text(notes + "\n", encoding="utf-8")
 
     sha_path = DIST / (zip_path.name + ".sha1")
     assets = [str(zip_path)]

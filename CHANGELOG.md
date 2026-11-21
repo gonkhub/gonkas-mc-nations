@@ -15,38 +15,35 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-_nothing yet_
+- _nothing yet_
+
+
+## 0.1.1 - 2026-11-21
+
+- The sculk no longer claims whole chunks. It spreads from catalysts, growing where
+  things die, instead of converting the ground around it on sight.
+- Ancient cities are quiet again when you find them. They grow because an empire moves
+  in next to them, not because you walked past.
+- Sculk territory is drawn in purple on the map.
+- Sculk raids now take ground, not just lives.
+- Distant Horizons draws a shorter distance, fixing the blocky terrain on the server.
+
+
+## 0.1.0 - 2026-11-21
+
+- The End has been rebuilt on a new mod, The Beyond, replacing Astrological. **The old End
+  was regenerated: anything you built there is gone.**
+- Caravans between settlements are now real. NPC porters carry the goods, travel faster and
+  safer with a saddle on the shelf, can be robbed on the road, and bring a counter-load home.
+- Ancient cities now read as lost from the surface: the ground above one is already sculk.
+- Climb walls and ceilings with the Tentacle Rig (Create: Octo Arms).
+- Better horses, cameras, cooking, brewing and worldgen decoration: 19 mods added.
 
 ## 0.0.1 - 2026-11-21
 
-The first public package: Minecraft 1.21.1, NeoForge 21.1.265, 134 mods.
+First public package. Minecraft 1.21.1, NeoForge 21.1.265, 134 mods.
 
-**What the pack is**
-
-- Minecolonies is the settlement layer. Vanilla villages and villagers are removed
-  entirely - every settlement in the world is one somebody built and staffed.
-- Nations and empires, with vassalage by agreement rather than conquest: a vassal keeps
-  its own name, its own colony and its own citizens.
-- Inter-colony markets and caravans that ride Create's rail network, so trade between
-  two colonies is a train that can be raided, not a menu.
-- Numismatics is the currency. Treasuries are ledgers denominated in cogs.
-- The Sculk is the world's antagonist and its only source of new money.
-- BlueMap draws empire territory, colony borders, the Sculk and the rail network.
-
-**You can found more than one colony.** Empire builders were limited to a single colony
-each, which made it impossible to run several provinces yourself - you could only ever
-grow by taking vassals. Founding a second colony no longer requires abandoning the first.
-
-**Recipes repaired, carried over from The Factory Must Gonk**
-
-- **Popped Purpurite and Cracked Light Jade Tiles can be made again.** Both had no
-  working recipe at all: Astrological ships its smelting recipes in a newer format than
-  this Minecraft version can read, so the game dropped them and left two blocks nothing
-  could produce.
-- **The white Placard can be dyed again** - the one placard colour Create Deco's broken
-  recipe left unobtainable.
-- **The Alternator and Electric Motor can be automated with a Packager.** Their stock
-  recipes are too wide for a 3x3 crafter array, so a Packager silently refused them;
-  there are now 3x3 versions of both. The originals still work if you have already built
-  a wide crafter wall. Slightly cheaper on iron and brass plate, same of everything
-  expensive.
+- Popped Purpurite and Cracked Light Jade Tiles are craftable again.
+- The white Placard can be dyed again.
+- The Alternator and Electric Motor can be automated with a Packager.
+- A player may found more than one colony.

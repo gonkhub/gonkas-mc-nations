@@ -54,6 +54,12 @@ CLIENT_ONLY = {
     "DistantHorizons": "declares clientSideOnly = true; would refuse to load",
     "dhturbo": "Distant Horizons addon, pointless without it",
     "entityculling": "client-side occlusion culling",
+    # Both declare side="CLIENT" on their neoforge AND minecraft dependencies, which
+    # is the mod saying it is client-only rather than a dependency saying it is only
+    # needed there. icys-better-horses and particular look similar at a glance and are
+    # NOT client-only: their core deps are side="BOTH" and only a dependency is CLIENT.
+    "cirrus": "client cloud rendering",
+    "weatherglass": "client weather HUD",
 }
 
 # --------------------------------------------------------------------------------------------

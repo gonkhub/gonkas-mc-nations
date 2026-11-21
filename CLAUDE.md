@@ -60,3 +60,48 @@ Credential Manager under `GonkasMCNations:ftp` and `deploy-ftp.py` reads it at c
 time. `scripts/check-no-secrets.sh` blocks a literal IP, a password or a machine path in
 any tracked file, and it is right to — that is why the server address lives in the
 gitignored `scripts/release-local.json`.
+
+## Public repo: keep it thin
+
+**Never write a README, a release description, or any lengthy player-facing prose into
+this repository.** It goes stale within a release or two and then actively misleads.
+
+- **A release body is the CHANGELOG entry and nothing else.** `release.py publish` emits
+  exactly that; do not add a footer, a summary, or a description of what the pack is.
+  0.0.1 shipped a page of prose including a section headed *"carried over from The
+  Factory Must Gonk"* - the name of a different instance that exists only on this
+  machine. A stranger downloading a zip cannot act on any of it.
+- **Changelog entries are terse and player-visible.** What changed, in their words, one
+  line each. Not what the pack IS, not why, not internal history.
+- **Internal documentation stays on this machine.** `docs/` is gitignored on purpose:
+  the runbook, the design surveys, the testing notes, the audits and the handover doc are
+  written for whoever is building this, and are noise in a public repo. Prefer
+  `git rm --cached` plus a `.gitignore` line over deleting; the local copy is the point.
+- **What the public repo is for:** the pack itself, the scripts that build and release it,
+  and a minimal README. Nothing that needs rewriting every time the pack changes.
+
+If you catch yourself writing a paragraph for GitHub, it belongs in `docs/` instead.
+
+## Launching the instance rewrites instance.cfg
+
+Prism rewrites `instance.cfg` from its own state when it launches an instance, which
+**silently reverts `ExportVersion` to whatever Prism last knew**. Bump, launch-test, then
+publish, and the zip name and the repo disagree about the version.
+
+Hit on 2026-11-21: `release.py bump minor` set `ExportVersion=0.1.0`, the launch test put
+it back to `0.0.1`, and only `git status` caught it. **After any launch of the instance,
+check `git diff instance.cfg` before releasing.**
+
+## The server and the GitHub release never diverge
+
+**Any time the Host Havoc server is updated, publish a GitHub release for that same
+version.** Not "soon", not "at the next milestone" - the two are one step. A server
+running a build players cannot download is a build nobody can reproduce, debug against,
+or roll back to.
+
+Practically this means `release.py deploy` and `release.py publish` belong in the same
+sitting, and a deploy that cannot be published yet (because the build is known bad) should
+be rolled forward to one that can, rather than left unpublished.
+
+Standing instruction from the user, 2026-11-21, after 0.1.0 went to the server and sat
+unpublished.

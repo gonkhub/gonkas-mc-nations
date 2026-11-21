@@ -470,6 +470,52 @@ def game_port_open(address, timeout=5):
         return False
 
 
+# The small files the SERVER owns and nothing else has a copy of.
+#
+# Everything under config/, mods/ and the rest is built from this repo, so it is
+# already backed up by being in git. These are not: they are edited on the live
+# server, through the panel or in game, and if the box died tomorrow they would be
+# gone. They are also tiny, which is the point - this runs in seconds on every
+# deploy, where copying the world does not.
+SERVER_STATE = [
+    "server.properties",
+    "ops.json",
+    "whitelist.json",
+    "banned-players.json",
+    "banned-ips.json",
+    "usercache.json",
+]
+
+
+def cmd_backup_state(args):
+    """Copy the handful of server-owned files that exist nowhere else."""
+    cfg = ftp_config()
+    local_cfg = packmeta.local()
+    base = pathlib.Path(args.into or local_cfg.get("backup_dir")
+                        or (packmeta.ROOT / "dist" / "world-backups"))
+    out = base / ("server-state_" + time.strftime("%Y-%m-%d_%H%M%S"))
+    out.mkdir(parents=True, exist_ok=True)
+
+    session = connect(cfg)
+    saved = 0
+    for name in SERVER_STATE:
+        target = out / name
+        try:
+            with target.open("wb") as fh:
+                session.retrbinary("RETR " + name, fh.write)
+        except ftplib.all_errors as exc:
+            # Absent is normal: a server with no bans has no banned-ips.json.
+            target.unlink(missing_ok=True)
+            print("   skipped %-22s %s" % (name, exc))
+            continue
+        saved += 1
+        print("   saved   %-22s %d bytes" % (name, target.stat().st_size))
+    session.quit()
+    print()
+    print("server state: %d file(s) to %s" % (saved, out))
+    return 0
+
+
 def cmd_backup_world(args):
     cfg = ftp_config()
     local_cfg = packmeta.local()
@@ -594,6 +640,11 @@ def main():
     p.add_argument("--allow-running", action="store_true",
                    help="copy even though the server is up (the copy may be torn)")
     p.set_defaults(func=cmd_backup_world)
+
+    p = sub.add_parser("backup-state",
+                       help="copy the small server-owned files (ops, bans, properties)")
+    p.add_argument("--into", default=None, help="local directory to write under")
+    p.set_defaults(func=cmd_backup_state)
 
     args = parser.parse_args()
     return args.func(args)

@@ -5,10 +5,29 @@
 # thee 1.0.0 has shipped as at least four DIFFERENT builds all stamped 1.0.0.
 # The 434300-byte build has no Mechanical Broker. This one does (35 entries).
 # A client/server mismatch here is a hard connect failure, not a soft degrade.
-af2664c45ee0913fd813768842eac3debbe81e6c *minecraft/mods/thee-1.28.0.jar
+d16af6cfff35f40b9e8f0512bf80ef86ea9dc4af *minecraft/mods/thee-1.33.0.jar
 46e4b29fc6de34963d6f519c8777a16c4509bd99 *minecraft/mods/chaosgate-1.0.0.jar
 bb022758db735ef9836bb02559d7b00debab2a23 *minecraft/mods/omnifix-1.2.0.jar
 edf131afd474151afe076ea975ce5fec5a206ad8 *minecraft/mods/kubejs-neoforge-2101.7.2-build.368.jar
 f54d9ff53909771d27e4d9d135c3707cd5d5f855 *minecraft/mods/kubejs-create-neoforge-2101.3.1-build.18.jar
 54ffddd1763ae4af84e9bbcb22e4081a1e7f3556 *minecraft/mods/lootjs-neoforge-1.21.1-3.7.0.jar
 7e8aea4f03b18076cab5555f6d30e35ff919b342 *minecraft/mods/morejs-neoforge-1.21.1-0.16.0.jar
+1b4a99ac2eec28630810d89a419e35aeaf356cee *minecraft/mods/backbone-neoforge-1.2.1.jar
+bc86c776779b16dec386f4b667ff46d9e2ecb88d *minecraft/mods/BrewinAndChewin-neoforge-4.5.0+1.21.1.jar
+508e123146c7d953739334def6e8200d2c10a2e8 *minecraft/mods/cirrus-neoforge-1.21.1-1.4.2.jar
+58560b7d81f26708580ca48910f99e031fcbfd41 *minecraft/mods/diegesis-neoforge-1.21.1-1.0.0-beta.15.jar
+68f276dc8cf57658b0afc2112c6ee63325989e02 *minecraft/mods/eatinganimation-1.21.0-6.0.1.jar
+6964c32c57f27297d2d773b2ff6d43b3807fa32a *minecraft/mods/exposure-neoforge-1.21.1-1.9.21.jar
+29a8153c54b9b03a3b4b42be7d77fe4ac2459720 *minecraft/mods/gml-6.0.2.jar
+24d558ebe5a9b33b7ad258f8faf269baa655a132 *minecraft/mods/handson_delight-neoforge-1.21.1-1.6.1.jar
+5f99273b490a8e7f1626780819d72fcff5fef60e *minecraft/mods/icys-better-horses-2.1.8-neo-1.21.1.jar
+2c780a37abc3252e7f03440244aad0ddb3ac90f2 *minecraft/mods/let_it_walk-0.1.5.jar
+ae7b0b434318302d5479a9e9f9fff80477287a25 *minecraft/mods/modonomicon-1.21.1-neoforge-1.123.1.jar
+6dae57f4f50f7808d2ed9a18f6cd1c0d4640c6bc *minecraft/mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar
+5746fe93f158344c710e3832da446a51537866d6 *minecraft/mods/octo-arms-1.8.0+mc1.21.1.jar
+9f87c480939ebaca453ff22414e37afdd37579a1 *minecraft/mods/particular-1.21.1-NeoForge-1.6.1.jar
+0ebee1a87176657c1c47f74861fc398395e380e7 *minecraft/mods/places-0.5.5-neoforge-1.21.1.jar
+983f812948aec756cd9976f712db065940e7527a *minecraft/mods/places_sable-1.0.0-neoforge-1.21.1.jar
+8b6dba68ae4cfb32e364daef3df4023ff56db495 *minecraft/mods/the_beyond-1.0.1.jar
+3d62931b46a993bfdb58f99e3de1f11530dc5bc4 *minecraft/mods/weatherglass-0.6.2-1.21.1-neoforge.jar
+fe270c9f6e0a8142cf316944087f5109cef08bbb *minecraft/mods/yet_another_config_lib_v3-3.8.2+1.21.1-neoforge.jar

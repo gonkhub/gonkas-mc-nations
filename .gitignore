@@ -129,3 +129,34 @@ __pycache__/
 
 # built player zip - 550 MB, rebuild with scripts/build-client-package.py
 dist/
+
+# ---- 2026-11-21 mod intake -------------------------------------------------
+# Nineteen jars that arrived as a player's mods folder, with no CurseForge or
+# Modrinth provenance to put in the packwiz index. Tracked directly instead, on
+# the same reasoning as the kubejs set above: a jar nobody can reproduce from an
+# index has to live in the repo or a fresh clone silently installs a smaller pack
+# than the one we ship. hand-installed.sha1 pins every one of them.
+!/minecraft/mods/backbone-neoforge-1.2.1.jar
+!/minecraft/mods/BrewinAndChewin-neoforge-4.5.0+1.21.1.jar
+!/minecraft/mods/cirrus-neoforge-1.21.1-1.4.2.jar
+!/minecraft/mods/diegesis-neoforge-1.21.1-1.0.0-beta.15.jar
+!/minecraft/mods/eatinganimation-1.21.0-6.0.1.jar
+!/minecraft/mods/exposure-neoforge-1.21.1-1.9.21.jar
+!/minecraft/mods/gml-6.0.2.jar
+!/minecraft/mods/handson_delight-neoforge-1.21.1-1.6.1.jar
+!/minecraft/mods/icys-better-horses-2.1.8-neo-1.21.1.jar
+!/minecraft/mods/let_it_walk-0.1.5.jar
+!/minecraft/mods/modonomicon-1.21.1-neoforge-1.123.1.jar
+!/minecraft/mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar
+!/minecraft/mods/octo-arms-1.8.0+mc1.21.1.jar
+!/minecraft/mods/particular-1.21.1-NeoForge-1.6.1.jar
+# places is 122 MB, over GitHub's hard 100 MB per-file limit, so it CANNOT be tracked
+# here however much we want the repo to be self-contained - a push carrying it is
+# rejected outright. It stays pinned in hand-installed.sha1 so the local copy is still
+# verified; a fresh clone has to fetch this one jar by hand until it gets a packwiz entry.
+# /minecraft/mods/places-0.5.5-neoforge-1.21.1.jar  (deliberately NOT un-ignored)
+!/minecraft/mods/places_sable-1.0.0-neoforge-1.21.1.jar
+!/minecraft/mods/the_beyond-1.0.1.jar
+!/minecraft/mods/weatherglass-0.6.2-1.21.1-neoforge.jar
+!/minecraft/mods/yet_another_config_lib_v3-3.8.2+1.21.1-neoforge.jar
+

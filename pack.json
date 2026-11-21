@@ -1,11 +1,10 @@
 {
   "name": "Gonka's MC Nations",
   "slug": "GonkasMCNations",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "minecraft": "1.21.1",
   "neoforge": "21.1.265",
   "github": "gonkhub/gonkas-mc-nations",
-
   "_comment": [
     "THE single source of truth for the pack version. Everything derives from it:",
     "the client zip filename, the git tag, the GitHub release, the changelog heading",

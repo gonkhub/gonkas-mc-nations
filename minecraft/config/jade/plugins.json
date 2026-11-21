@@ -125,8 +125,9 @@
   "jadeaddons": {
     "equipment_requirement": ""
   },
-  "jadeaddons.lootr": {
-    "info": true
+  "exposure": {
+    "lightroom": true,
+    "photograph_frame": true
   },
   "thaumic_aeronautics": {
     "block_details": true
