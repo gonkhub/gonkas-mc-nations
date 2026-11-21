@@ -15,30 +15,38 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- **You can found more than one colony.** Empire builders were limited to a single
-  colony each, which made it impossible to run several provinces yourself — you could
-  only ever grow by taking vassals. Founding a second colony no longer requires
-  abandoning the first.
+_nothing yet_
+
+## 0.0.1 - 2026-11-21
+
+The first public package: Minecraft 1.21.1, NeoForge 21.1.265, 134 mods.
+
+**What the pack is**
+
+- Minecolonies is the settlement layer. Vanilla villages and villagers are removed
+  entirely - every settlement in the world is one somebody built and staffed.
+- Nations and empires, with vassalage by agreement rather than conquest: a vassal keeps
+  its own name, its own colony and its own citizens.
+- Inter-colony markets and caravans that ride Create's rail network, so trade between
+  two colonies is a train that can be raided, not a menu.
+- Numismatics is the currency. Treasuries are ledgers denominated in cogs.
+- The Sculk is the world's antagonist and its only source of new money.
+- BlueMap draws empire territory, colony borders, the Sculk and the rail network.
+
+**You can found more than one colony.** Empire builders were limited to a single colony
+each, which made it impossible to run several provinces yourself - you could only ever
+grow by taking vassals. Founding a second colony no longer requires abandoning the first.
+
+**Recipes repaired, carried over from The Factory Must Gonk**
+
 - **Popped Purpurite and Cracked Light Jade Tiles can be made again.** Both had no
   working recipe at all: Astrological ships its smelting recipes in a newer format than
   this Minecraft version can read, so the game dropped them and left two blocks nothing
   could produce.
-- **The white Placard can be dyed again** — the one placard colour Create Deco's broken
+- **The white Placard can be dyed again** - the one placard colour Create Deco's broken
   recipe left unobtainable.
 - **The Alternator and Electric Motor can be automated with a Packager.** Their stock
-  recipes are too wide for a 3×3 crafter array, so a Packager silently refused them;
-  there are now 3×3 versions of both. The originals still work if you have already built
+  recipes are too wide for a 3x3 crafter array, so a Packager silently refused them;
+  there are now 3x3 versions of both. The originals still work if you have already built
   a wide crafter wall. Slightly cheaper on iron and brass plate, same of everything
   expensive.
-
-## 0.0.1 - 2026-11-20
-
-First built package, not released to anyone.
-
-- Minecraft 1.21.1, NeoForge 21.1.265, 134 mods.
-- Minecolonies as the settlement layer; vanilla villages and villagers removed entirely.
-- `thee` 1.28.0: nations and empires, vassalage by agreement, inter-colony markets and
-  caravans on the rail network, the Sculk as the world's antagonist and its only source
-  of new money.
-- Numismatics is the currency; treasuries are ledgers denominated in cogs.
-- BlueMap draws empire territory, colony borders, the Sculk and Create's rail network.
