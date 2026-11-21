@@ -8,6 +8,11 @@
 .gitignore
 .gitattributes
 README.md
+# CLAUDE.md is instructions for an AI working on this repo. Players were being
+# shipped it. CHANGELOG.md is release metadata - the release page already carries
+# the entry. Neither is needed to RUN the pack, which is the bar for the zip.
+CLAUDE.md
+CHANGELOG.md
 docs
 scripts
 

@@ -21,7 +21,10 @@
 # CLAUDE.md is repo mechanics, not design notes: how to edit files here without
 # flipping line endings, where the version lives, why the ledger is append-only.
 # A clone needs it; docs/ stays local on purpose, this does not.
-!/CLAUDE.md
+# CLAUDE.md is NOT tracked: GitHub carries the pack and the tooling to build it,
+# not documentation and not AI instructions. The file stays on this machine, the
+# same way docs/ does.
+/CLAUDE.md
 
 # ── This machine's view of the live server ──
 # Holds the server address and the FTP account name. Never tracked; the example beside
