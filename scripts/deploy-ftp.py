@@ -154,10 +154,16 @@ def ftp_config():
 def connect(cfg, quiet=False):
     """An authenticated FTP session, TLS if the server will take it.
 
-    Host Havoc's own guide describes a certificate prompt in FileZilla, which means
-    explicit FTPS on the control channel. We ask for it, and fall back to plain FTP
-    rather than failing the deploy - but we say loudly which one we got, because
-    "my credentials went over the wire in clear text" should never be silent.
+    THIS HOST REFUSES FTPS, confirmed 2026-11-21: it advertises AUTH TLS and AUTH SSL
+    in FEAT and then answers `500 FTPS not enabled, AUTH not supported`. So in practice
+    this always lands on plain FTP and the panel password crosses the network in clear
+    text - the same exposure FileZilla has against this server, not something this
+    script introduces.
+
+    We still ask for TLS every time, because the day the host enables it we should
+    start using it without anyone having to remember to change a flag. We say loudly
+    which one we got, because "my credentials went over the wire in clear text" should
+    never be silent.
     """
     cred = read_credential(cfg["target"])
 
@@ -179,7 +185,12 @@ def connect(cfg, quiet=False):
                 print("connected  %s:%d as %s  (FTPS, data channel encrypted, "
                       "certificate not verified)" % (cfg["host"], cfg["port"], cred.user))
             return session
-        except (ftplib.all_errors, ssl.SSLError, socket.error) as exc:
+        # all_errors is ALREADY a tuple - (Error, OSError, EOFError, SSLError) - so
+        # nesting it in another tuple makes an invalid except clause and raises
+        # TypeError instead of catching anything. This fallback therefore never
+        # worked, and crashed the first time the server refused AUTH TLS. The
+        # ssl.SSLError and socket.error I had added are both already in there.
+        except ftplib.all_errors as exc:
             last = exc
 
     try:
@@ -187,10 +198,12 @@ def connect(cfg, quiet=False):
         session.connect(cfg["host"], cfg["port"])
         session.login(cred.user, cred.secret)
         if not quiet:
-            print("connected  %s:%d as %s  (PLAIN FTP - credentials sent unencrypted)"
-                  % (cfg["host"], cfg["port"], cred.user))
+            print("connected  %s:%d as %s" % (cfg["host"], cfg["port"], cred.user))
+            print("           PLAIN FTP - this is the Multicraft PANEL password and it")
+            print("           just crossed the network unencrypted. Expected on this")
+            print("           host; do not run it on a network you do not trust.")
             if last:
-                print("           FTPS was tried first and failed: %s" % last)
+                print("           FTPS refused: %s" % last)
         return session
     except ftplib.all_errors as exc:
         raise packmeta.PackError(
