@@ -1,0 +1,18 @@
+filename = 'colonypathingedition-1.21.1-1.0.5-fix-7.2.jar'
+name = 'Pathfinding Edition for MineColonies'
+side = 'both'
+x-prismlauncher-dependencies = []
+x-prismlauncher-loaders = [ 'neoforge' ]
+x-prismlauncher-mc-versions = [ '1.21.1' ]
+x-prismlauncher-release-type = 'release'
+x-prismlauncher-version-number = '1.0.5-fix-7.2'
+
+[download]
+hash = '3c8c8b768b0eb4b12841c8a4dac6a5b0a1732adc085196c1c3a30a7b332594b73de99fb9ac8ab3ed079603541b0895a1d432613396200478b76d4afd78e20b19'
+hash-format = 'sha512'
+mode = 'url'
+url = 'https://cdn.modrinth.com/data/UFGyxCZm/versions/iPZFlJ3o/colonypathingedition-1.21.1-1.0.5-fix-7.2.jar'
+
+[update.modrinth]
+mod-id = 'UFGyxCZm'
+version = 'iPZFlJ3o'

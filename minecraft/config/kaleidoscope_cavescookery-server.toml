@@ -1,0 +1,147 @@
+[abyssal_communion_table]
+	#Cooldown per Deep One after a successful bite, in ticks.
+	# Default: 600
+	# Range: 1 ~ 72000
+	cooldownTicks = 600
+	#POI search radius for nearby communion tables, in blocks.
+	# Default: 32
+	# Range: 4 ~ 128
+	searchRange = 32
+	#The serving player must be alive, online and within this range in the same dimension.
+	# Default: 32.0
+	# Range: 4.0 ~ 128.0
+	playerRange = 32.0
+
+[hullbreaker_form]
+	#Additional swim speed per effect level; 1.0 doubles speed at level I.
+	# Default: 1.0
+	# Range: 0.0 ~ 10.0
+	swimSpeedBonus = 1.0
+	#Additional melee/projectile damage per level while the player is submerged.
+	# Default: 1.0
+	# Range: 0.0 ~ 10.0
+	underwaterDamageBonus = 1.0
+
+[conch_shell_spatula]
+	#Minimum charge time before releasing a wave.
+	# Default: 10
+	# Range: 1 ~ 72000
+	minChargeTicks = 10
+	#Charge time at which a wave reaches full size and range.
+	# Default: 30
+	# Range: 2 ~ 72000
+	fullChargeTicks = 30
+	#Cooldown after releasing a wave, in ticks.
+	# Default: 40
+	# Range: > 0
+	cooldownTicks = 40
+	#Minimum-charge Alex's Caves wave scale.
+	# Default: 1.0
+	# Range: 0.1 ~ 16.0
+	minWaveScale = 1.0
+	#Full-charge Alex's Caves wave scale.
+	# Default: 2.0
+	# Range: 0.1 ~ 16.0
+	maxWaveScale = 2.0
+	#Minimum-charge wave activity duration, in ticks.
+	# Default: 6
+	# Range: 1 ~ 120
+	minWaveLifespanTicks = 6
+	#Full-charge wave activity duration, in ticks.
+	# Default: 20
+	# Range: 1 ~ 120
+	maxWaveLifespanTicks = 20
+
+[dream_sacrifice]
+	#Chance to carve one hullbreaker steak after a successful Dream Sacrifice melee hit.
+	# Default: 0.15
+	# Range: 0.0 ~ 1.0
+	carveChance = 0.15
+
+[deep_one_jelly]
+	#Chance for a Deep One Mage barter to yield Deep One Jelly instead of its normal loot.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	barterChance = 0.1
+
+[abyssal_glow]
+	#Horizontal range in blocks at which underwater fish follow an Abyssal Glow player.
+	# Default: 16.0
+	# Range: 1.0 ~ 128.0
+	fishRange = 16.0
+	#Horizontal range in blocks at which Deep Ones approach an Abyssal Glow player.
+	# Default: 24.0
+	# Range: 1.0 ~ 128.0
+	deepOneRange = 24.0
+	#Horizontal range in blocks at which Hullbreakers and Drowned target an Abyssal Glow player.
+	# Default: 48.0
+	# Range: 1.0 ~ 128.0
+	hostileRange = 48.0
+
+[chopping_board]
+	#Chance that the limestone bone cleaver breaks a fragile chopping board after a successful cut.
+	# Default: 0.05
+	# Range: 0.0 ~ 1.0
+	limestoneCleaverBoardBreakChance = 0.05
+	#Chance that the extinction bone cleaver breaks a fragile chopping board after a successful cut.
+	# Default: 0.08
+	# Range: 0.0 ~ 1.0
+	extinctionCleaverBoardBreakChance = 0.08
+
+[stuffed_grottoceratops]
+	#Ticks required to roast a stuffed grottoceratops on a complete 3x5 volcanic stove.
+	# Default: 2400
+	# Range: > 1
+	grottoceratopsCookTime = 2400
+
+[tectonic_frying_pan]
+	#Minimum use time in ticks before the tectonic frying pan can summon a soul.
+	# Default: 10
+	# Range: 1 ~ 72000
+	minChargeTicks = 10
+	#Use time in ticks at which the tectonic frying pan reaches full power.
+	# Default: 30
+	# Range: 2 ~ 72000
+	fullChargeTicks = 30
+	#Cooldown in ticks after a successful tectonic frying pan slam.
+	# Default: 100
+	# Range: > 0
+	cooldownTicks = 100
+	#Damage dealt by a minimum-charge tectonic frying pan slam.
+	# Default: 6.0
+	# Range: 0.0 ~ 1000.0
+	minDamage = 6.0
+	#Damage dealt by a full-charge tectonic frying pan slam.
+	# Default: 12.0
+	# Range: 0.0 ~ 1000.0
+	maxDamage = 12.0
+	#Horizontal radius of a minimum-charge tectonic frying pan slam.
+	# Default: 3.0
+	# Range: 0.5 ~ 32.0
+	minRadius = 3.0
+	#Horizontal radius of a full-charge tectonic frying pan slam.
+	# Default: 5.0
+	# Range: 0.5 ~ 32.0
+	maxRadius = 5.0
+
+[volcanic_stove]
+	#Ticks before a tectonic shard triggers a volcanic stove eruption.
+	# Default: 40
+	# Range: > 1
+	eruptionDelayTicks = 40
+	#Radius of the heat pulse emitted by a volcanic stove eruption.
+	# Default: 2.5
+	# Range: 0.5 ~ 32.0
+	eruptionRadius = 2.5
+	#Damage dealt to living entities by a volcanic stove eruption.
+	# Default: 6.0
+	# Range: 0.0 ~ 1000.0
+	eruptionDamage = 6.0
+	#Seconds living entities remain on fire after a volcanic stove eruption.
+	# Default: 5
+	# Range: 0 ~ 120
+	eruptionFireSeconds = 5
+	#Chance that an eligible block in the eruption volume is converted.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	eruptionBlockChance = 0.5

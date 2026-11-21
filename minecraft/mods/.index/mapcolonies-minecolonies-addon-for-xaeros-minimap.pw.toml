@@ -1,0 +1,18 @@
+filename = 'mapcolonies-1.0.1.jar'
+name = "MapColonies | Minecolonies Addon For Xaero's Minimap"
+side = 'server'
+x-prismlauncher-dependencies = []
+x-prismlauncher-loaders = [ 'neoforge' ]
+x-prismlauncher-mc-versions = [ '1.21.1' ]
+x-prismlauncher-release-type = 'release'
+x-prismlauncher-version-number = 'mapcolonies-1.0.1.jar'
+
+[download]
+hash = 'b42c0ec80bf9b92df140c57e73a0d51a78d7a94b'
+hash-format = 'sha1'
+mode = 'metadata:curseforge'
+url = ''
+
+[update.curseforge]
+file-id = 9353768
+project-id = 1758818

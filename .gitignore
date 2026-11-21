@@ -13,6 +13,17 @@
 !/README.md
 /notes/
 
+# CHANGELOG.md is the exception, and deliberately so: it is the only doc written for
+# players rather than for us. scripts/release.py uses the matching section as the
+# GitHub release notes, so it has to be in the repo at the tag it describes, or the
+# release that quotes it cannot be reconstructed later.
+!/CHANGELOG.md
+
+# ── This machine's view of the live server ──
+# Holds the server address and the FTP account name. Never tracked; the example beside
+# it is. See scripts/release-local.example.json.
+/scripts/release-local.json
+
 # ── Worlds and per-world data ──
 /minecraft/saves/
 /minecraft/Distant_Horizons_server_data/
@@ -42,6 +53,10 @@
 
 # ── Per-player state, not pack content ──
 /minecraft/xaero/
+# Carried over from the old 1.21.1 instance. The gonk pack's .gitignore had this line
+# and this one did not, so it was the single file the new preflight gate flagged as
+# neither tracked nor ignored. build-client-package.py already kept it out of the zip.
+/minecraft/XaeroWaypoints_BACKUP240807/
 /minecraft/usercache.json
 /minecraft/usernamecache.json
 /minecraft/patchouli_data.json
@@ -55,6 +70,18 @@
 
 # ── Contains a generated auth token ──
 /minecraft/kubejs/config/web_server.json
+
+# Resourceful Config's web server: holds a generated password for its local web UI,
+# one per machine. build-client-package.py already excluded it from the player zip,
+# but nothing kept it out of git — check-no-secrets.sh caught it on the commit that
+# first tracked the config tree, which is exactly the commit it would have gone
+# public in. Each install generates its own.
+/minecraft/config/resourceful-config-web.json
+
+# Structurize's local scan pack: per-player state named after whoever scanned, not
+# pack content. The pack's own blueprints ship inside the thee jar at
+# blueprints/thee/gonk/, discovered by Structurize straight out of it.
+/minecraft/blueprints/
 
 # ── Mod jars: track the packwiz index, not the downloads ──
 # mods/.index/*.pw.toml carries the URL + sha512 for every mod that
@@ -72,6 +99,12 @@
 # against a wrong hand-installed build silently never reaches the repo
 !/minecraft/mods/hand-installed.sha1
 
+# the append-only record of every version of a pack-built mod and the sha1 it had.
+# hand-installed.sha1 pins the jar that is in mods/ right now, which cannot catch a
+# rebuild at an unchanged version — the manifest just gets updated too. The ledger is
+# the part that remembers, so it has to survive a clone.
+!/minecraft/mods/version-ledger.tsv
+
 # custom, unreproducible — losing these loses the pack
 !/minecraft/mods/thee-*.jar
 !/minecraft/mods/chaosgate-*.jar
@@ -82,3 +115,13 @@
 !/minecraft/mods/kubejs-create-neoforge-*.jar
 !/minecraft/mods/lootjs-neoforge-*.jar
 !/minecraft/mods/morejs-neoforge-*.jar
+
+# A vendored loader installer: 7 MB, reproducible from maven, no business in git.
+/scripts/.vendor/
+
+# Python bytecode from the release scripts.
+__pycache__/
+*.pyc
+
+# built player zip - 550 MB, rebuild with scripts/build-client-package.py
+dist/

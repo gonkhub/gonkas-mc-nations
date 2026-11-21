@@ -1,0 +1,13 @@
+# Every version of a pack-built mod ever released, and the sha1 it had.
+#
+# APPEND-ONLY. A row is never edited and never deleted. If a line here is wrong,
+# the fix is a new version, not a corrected row - the whole value of this file is
+# that it remembers what a version string meant the first time it was used.
+#
+# A version appearing twice with two different sha1s is the bug this file exists to
+# catch; see scripts/verify-custom-jars.py.
+#
+# mod_id	version	sha1	bytes	first_recorded
+chaosgate	1.0.0	46e4b29fc6de34963d6f519c8777a16c4509bd99	9838	2026-11-20
+omnifix	1.2.0	bb022758db735ef9836bb02559d7b00debab2a23	14587	2026-11-20
+thee	1.28.0	af2664c45ee0913fd813768842eac3debbe81e6c	500461	2026-11-20

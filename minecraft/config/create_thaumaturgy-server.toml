@@ -1,0 +1,966 @@
+#The Warded Tank, Spout and Item Drain, which tubes join as they join a jar, and the leak out of Create's own Spout and Item Drain.
+[warded]
+	#Suction a Warded Tank draws essentia from tubes with. Plain jars have 32, the addon's machines 48 and labelled jars 64: at 40 a tank empties plain jars, and gives to machines, spouts and labelled jars, which pull harder.
+	# Default: 40
+	# Range: 1 ~ 1024
+	tankSuction = 40
+	#Suction the Warded Spout and the Pressure Crucible draw essentia from tubes with. Above the tank's, so they empty Warded Tanks and plain jars; at 64 they tie with labelled jars.
+	# Default: 64
+	# Range: 1 ~ 1024
+	drawSuction = 64
+	#Ticks between two leaks of essentia out of Create's own Spout or Item Drain. Each leak's essentia becomes flux (spillFluxPerEssentia a point), put down round it as gas and goo.
+	# Default: 20
+	# Range: 1 ~ 72000
+	unwardedLeakInterval = 20
+	#Points of essentia a leak takes at the least.
+	# Default: 3
+	# Range: 1 ~ 1000
+	unwardedLeakPoints = 3
+	#Share of what is held that a leak takes, when that is more than unwardedLeakPoints. At 0.1 a full spout loses a tenth of its essentia every leak.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	unwardedLeakShare = 0.1
+
+#Essentia held in tanks.
+[essentia]
+	#Flux released for each point of essentia let out of a tank: a Warded Tank, spout, drain, Pressure Crucible or machine that is broken, or a leak out of Create's own Spout and Item Drain. Thaumaturge releases 1 flux per point when a jar or tube breaks; a tank holds essentia pressed together, so by default it spills twice as badly.
+	# Default: 2.0
+	# Range: 0.0 ~ 100.0
+	spillFluxPerEssentia = 2.0
+
+#Recharge pedestals, as seen by funnels and other automation.
+[pedestals]
+	#Seconds a charging item may go without gaining charge before automation may take it.
+	# Default: 10
+	# Range: 1 ~ 3600
+	rechargeStallSeconds = 10
+
+#The Thaumic Turbine, a generator burning essentia (or drawing chunk vis).
+[turbine]
+	#RPM it turns at while running.
+	# Default: 32
+	# Range: 1 ~ 256
+	speed = 32
+	#Stress capacity in SU per RPM while running, like Create's own generator settings. The default, 64, gives 2048 SU at 32 RPM.
+	# Default: 64.0
+	# Range: 0.0 ~ 16384.0
+	stressCapacity = 64.0
+	#Essentia its fuel tank holds (10 mB each).
+	# Default: 100
+	# Range: 1 ~ 100000
+	capacity = 100
+	#Suction it draws fuel from tubes with. 48 empties plain jars but not labelled ones.
+	# Default: 48
+	# Range: 1 ~ 1024
+	suction = 48
+	#Whether a wrench can switch it to draw chunk vis instead of burning essentia.
+	auraModeEnabled = true
+	#Chunk vis drawn per second in aura mode.
+	# Default: 1.0
+	# Range: 0.0 ~ 1000.0
+	auraVisPerSecond = 1.0
+	#Flux released for each point of vis drawn in aura mode.
+	# Default: 0.1
+	# Range: 0.0 ~ 100.0
+	auraFluxPerVis = 0.1
+	#In aura mode it stops while the chunk's vis is below this share of the chunk's base, so it can't drain a chunk dry. 0 lets it run until the vis is gone.
+	# Default: 0.25
+	# Range: 0.0 ~ 1.0
+	auraMinimumVisShare = 0.25
+
+#The Gyroscopic Stabiliser, an infusion stabiliser that only works while spinning.
+[gyroscope]
+	#Stress impact in SU per RPM, like Create's own stress settings. The default, 8, is 2048 SU for one stabiliser at 256 RPM.
+	# Default: 8.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 8.0
+	#RPM for each step of stabilisation. Below one step it doesn't stabilise at all. Strength comes in steps so that two stabilisers geared together always match.
+	# Default: 32
+	# Range: 1 ~ 256
+	rpmPerStep = 32
+	#Stability a counter-rotating pair restores per infusion cycle, for each step. Thaumaturge's candles give 0.1 and its candle holders 0.1 to 0.2.
+	# Default: 0.03
+	# Range: 0.0 ~ 1.0
+	stabilisationPerStep = 0.03
+	#Most steps a stabiliser can reach. The default, 8 steps of 32 RPM, tops out at 256 RPM with 0.24 per pair.
+	# Default: 8
+	# Range: 1 ~ 64
+	maxSteps = 8
+	#Stress impact of the Void Gyroscopic Stabiliser in SU per RPM. The default, 24, is 6144 SU for one at 256 RPM.
+	# Default: 24.0
+	# Range: 0.0 ~ 1024.0
+	voidStressImpact = 24.0
+	#Stability a counter-rotating pair of Void Gyroscopic Stabilisers restores per infusion cycle, for each step. The matrix weakens repeats of one block, not of another, so each tier adds to the others around one altar. The default tops out at 0.5 per pair.
+	# Default: 0.0625
+	# Range: 0.0 ~ 4.0
+	voidStabilisationPerStep = 0.0625
+	#Stress impact of the Astral Gyroscopic Stabiliser in SU per RPM. The default, 64, is 16384 SU for one at 256 RPM.
+	# Default: 64.0
+	# Range: 0.0 ~ 1024.0
+	astralStressImpact = 64.0
+	#Stability a counter-rotating pair of Astral Gyroscopic Stabilisers restores per infusion cycle, for each step. The default tops out at 1 per pair, which alone covers a recipe with an instability of 10.
+	# Default: 0.125
+	# Range: 0.0 ~ 4.0
+	astralStabilisationPerStep = 0.125
+
+#The Infernal Crusher, which crushes items and smelts the results with Ignis vis from a relay.
+[infernal_crusher]
+	#Stress impact in SU per RPM. The default, 8, is what Create's Crushing Wheels take.
+	# Default: 8.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 8.0
+	#Ignis vis drawn from a vis relay for each item smelted, in hundredths of a vis. Without it the crusher only crushes. 0 smelts for free, with no relay.
+	# Default: 10
+	# Range: 0 ~ 10000
+	centivisPerItem = 10
+
+#The Thaumium Drill: Create's drill with a thaumium head, which takes infusion enchantments.
+[thaumium_drill]
+	#Stress impact in SU per RPM. The default, 4, is what Create's Mechanical Drill takes.
+	# Default: 4.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 4.0
+	#How much faster it breaks blocks than Create's drill at the same speed, standing or on a contraption.
+	# Default: 1.5
+	# Range: 0.1 ~ 16.0
+	breakSpeedMultiplier = 1.5
+	#With Burrowing: the most blocks of an ore vein or a tree trunk it goes on to break after the one it drilled. 0 turns Burrowing off on drills.
+	# Default: 32
+	# Range: 0 ~ 256
+	burrowingVeinSize = 32
+
+#The Arcane Projector, which casts a focus's spell and pays from charged wands.
+[arcane_projector]
+	#On a contraption: an instant or charged focus casts once every this many blocks it moves, when its spell's cooldown allows (a charged one charges in between). A channelled focus pulses while the contraption moves instead. Standing, a redstone signal works it.
+	# Default: 3
+	# Range: 1 ~ 64
+	castEveryBlocks = 3
+
+#The Funnel Mirror, a pair of which moves items from the block one hangs on to the block the other hangs on.
+[funnel_mirror]
+	#Ticks between two batches a sending Funnel Mirror moves.
+	# Default: 10
+	# Range: 1 ~ 1200
+	interval = 10
+	#Most items of one kind a sending Funnel Mirror moves at a time. Each item adds one instability at both ends, and every 128 instability is a point of flux, as for Thaumaturge's item mirrors.
+	# Default: 16
+	# Range: 1 ~ 64
+	batch = 16
+
+#The Aura Diffuser, which releases essentia (Auram by default) into the chunk as vis.
+[aura_diffuser]
+	#Most points of essentia it releases each second. How much vis a point makes is in the create_thaumaturgy:diffuser_aspects data map; Auram makes 1.
+	# Default: 1
+	# Range: 1 ~ 1000
+	essentiaPerSecond = 1
+	#Essentia its tank holds (10 mB each).
+	# Default: 100
+	# Range: 1 ~ 100000
+	capacity = 100
+	#Suction it draws from tubes with. 48 empties plain jars but not labelled ones.
+	# Default: 48
+	# Range: 1 ~ 1024
+	suction = 48
+
+#The Ignis Burner, a burner that needs no blaze and burns essentia (Ignis by default). How long a point lasts is in the create_thaumaturgy:burner_fuels data map.
+[ignis_burner]
+	#Essentia its tank holds (10 mB each).
+	# Default: 100
+	# Range: 1 ~ 100000
+	capacity = 100
+	#Suction it draws from tubes with. 48 empties plain jars but not labelled ones.
+	# Default: 48
+	# Range: 1 ~ 1024
+	suction = 48
+	#Essentia its second tank holds, for what a fuel needs beside itself to superheat (Potentia for Ignis, in the create_thaumaturgy:burner_fuels data map). 10 mB each.
+	# Default: 50
+	# Range: 1 ~ 100000
+	catalystCapacity = 50
+
+#The Mirror Frogport, which sends packages straight to the Mirror Frogport they are addressed to.
+[mirror_frogport]
+	#Vis the sender's chunk pays for each package. With too little vis the packages wait. 0 sends for free.
+	# Default: 1.0
+	# Range: 0.0 ~ 1000.0
+	visPerPackage = 1.0
+	#Flux each package leaves in the sender's chunk, released in whole points.
+	# Default: 0.1
+	# Range: 0.0 ~ 1000.0
+	fluxPerPackage = 0.1
+
+#The golem post: Courier Seals, which have golems carry packages by address.
+[golem_post]
+	#How far apart, in blocks, two Courier Seals may be for golems to carry a package from one to the other.
+	# Default: 32
+	# Range: 1 ~ 256
+	range = 32
+
+#The Golem Stockroom: a Stockroom Seal on a Packager, which puts what golems keep on Create's stock network.
+[golem_stockroom]
+	#How long, in seconds, an order waits for golems to bring its goods to the Packager. Then it is packed with whatever came, and anything missing is left out, as Create's own Packagers leave out what they don't have.
+	# Default: 120
+	# Range: 5 ~ 3600
+	orderTimeout = 120
+
+#Golems at the crank: Crank Seals, which have a golem turn one of Create's Hand Cranks.
+[golem_crank]
+	#The most a golem's traits can multiply a Hand Crank's stress capacity by. The factor of each trait is in the data map create_thaumaturgy:crank_strength. 1 makes every golem as strong as a hand.
+	# Default: 4.0
+	# Range: 1.0 ~ 64.0
+	maxStrength = 4.0
+	#With "Only while there's work" on a Crank Seal: how many more turns the golem gives the shaft after the last load at its Store seals is used up, so the machine can finish it. A belt moves 2.5 blocks a turn.
+	# Default: 2
+	# Range: 0 ~ 64
+	runOnTurns = 2
+
+#The Golem Treadwheel, which a golem runs in, set to it by a Crank Seal.
+[golem_treadwheel]
+	#The wheel's RPM is this times the golem's work speed (Thaumaturge's, 1 for a plain golem of rank 0; light frames, roller legs and rank make it faster), rounded.
+	# Default: 16.0
+	# Range: 1.0 ~ 256.0
+	rpmPerWorkSpeed = 16.0
+	#Stress capacity in SU per RPM while a golem runs it. The default, 32, gives 512 SU at 16 RPM.
+	# Default: 32.0
+	# Range: 0.0 ~ 16384.0
+	stressCapacity = 32.0
+
+#The Taintacle Wheel, a Large Water Wheel turned by a Taintacle in a jar that eats flux goo.
+[taintacle_wheel]
+	#RPM while it is fed.
+	# Default: 16
+	# Range: 1 ~ 256
+	speed = 16
+	#Stress capacity in SU per RPM while it is fed. The default, 128, is a Large Water Wheel's: 2048 SU at 16 RPM.
+	# Default: 128.0
+	# Range: 0.0 ~ 16384.0
+	stressCapacity = 128.0
+	#Food the jar holds, in mB of flux goo (125 mB a point of flux).
+	# Default: 8000
+	# Range: 125 ~ 1000000
+	capacity = 8000
+	#Food it eats a minute, in mB, turning or not. What it eats leaves the world.
+	# Default: 1500
+	# Range: 0 ~ 1000000
+	gooPerMinute = 1500
+	#It is hungry, as the goggles say, when its food would last less than this many seconds.
+	# Default: 120
+	# Range: 0 ~ 3600
+	hungrySeconds = 120
+	#Seconds it starves, its wheel stopped, before it starts to spread taint.
+	# Default: 30
+	# Range: 0 ~ 3600
+	starveGraceSeconds = 30
+	#While it spreads taint: ticks between two forced fibre spreads (Thaumaturge's own, which turns the ground they reach into the Tainted Lands). Thaumaturge's wuss mode stops them.
+	# Default: 40
+	# Range: 1 ~ 12000
+	spreadInterval = 40
+	#The spreads start from a spot this many blocks from the hub at most.
+	# Default: 4
+	# Range: 0 ~ 16
+	spreadRadius = 4
+	#It strikes living things within this many blocks of the wheel's 3 by 3.
+	# Default: 3.0
+	# Range: 0.0 ~ 16.0
+	reach = 3.0
+	#Damage a strike does, of Thaumaturge's taint type, which goes through armour.
+	# Default: 4.0
+	# Range: 0.0 ~ 1000.0
+	strikeDamage = 4.0
+	#Ticks between two strikes.
+	# Default: 30
+	# Range: 1 ~ 1200
+	strikeInterval = 30
+	#A Taintacle can be caught in a Warded Jar at this share of its health or less.
+	# Default: 0.25
+	# Range: 0.0 ~ 1.0
+	catchHealth = 0.25
+
+#Grasp, the spell effect whose tentacles drag what the spell hits back to the caster.
+[grasp]
+	#How far it drags at power 1, in blocks; the part's power setting and a charged cast multiply it. Channelled, it carries what it took along the caster's look, as far from the caster's eyes as it was when taken, and the mouse wheel takes it nearer or farther, at most this times the power setting; it lets go of what gets a block farther than that, or than it was when taken.
+	# Default: 8.0
+	# Range: 0.0 ~ 64.0
+	reach = 8.0
+	#The farthest it drags in one cast, whatever the power, in blocks.
+	# Default: 24.0
+	# Range: 0.0 ~ 128.0
+	maxReach = 24.0
+	#Blocks it drags a tick.
+	# Default: 0.5
+	# Range: 0.05 ~ 4.0
+	speed = 0.5
+	#Ticks it holds a mob or an item where the drag ends, before it lets go. Channelled, it carries it until the channel stops or it tires (carryTicks).
+	# Default: 20
+	# Range: 0 ~ 1200
+	holdTicks = 20
+	#Ticks it holds a player where the drag ends. Channelled, it carries a player until the channel stops or they break free (playerCarryTicks).
+	# Default: 10
+	# Range: 0 ~ 1200
+	playerHoldTicks = 10
+	#Ticks it holds a train carriage or a minecart contraption where it is, at power 1; the part's power setting and a charged cast multiply it; channelled, it holds it until the channel stops. A held train stops and takes up its speed again after, as Create's own trains do when a drill on them is stalled.
+	# Default: 40
+	# Range: 0 ~ 1200
+	contraptionHoldTicks = 40
+	#Blocks one notch of the mouse wheel takes what a channelled Grasp carries nearer or farther.
+	# Default: 0.5
+	# Range: 0.05 ~ 8.0
+	scrollStep = 0.5
+	#Blocks a tick a channelled Grasp can swing a mob or an item. A player it carries moves at its drag speed instead.
+	# Default: 1.5
+	# Range: 0.05 ~ 4.0
+	carrySpeed = 1.5
+	#Blocks a tick a mob must be swung at for a wall or the ground to hurt it. Slower does nothing.
+	# Default: 0.4
+	# Range: 0.05 ~ 4.0
+	slamMinSpeed = 0.4
+	#Blocks a mob must be swung through, fast and one way, before a wall or the ground hurts it. With less there is no weight behind it, and it is only put down.
+	# Default: 2.0
+	# Range: 0.0 ~ 64.0
+	slamRunUp = 2.0
+	#Blocks of swing behind a slam for its full damage; less does less.
+	# Default: 5.0
+	# Range: 0.1 ~ 64.0
+	slamFullRunUp = 5.0
+	#Damage of a slam at the top carry speed with a full run-up, before power; less at a slower or shorter swing. Armour counts. Players it carries are not slammed: their own client moves them, so the server can't judge what they hit. With slamDamagePerPower, a full slam does what an Earth strike of the same power does, and a little more: 4, 6 and 8 at power 1, 2 and 3.
+	# Default: 2.0
+	# Range: 0.0 ~ 100.0
+	slamBaseDamage = 2.0
+	#Damage a full slam gains for each point of power: the part's power setting times what the rest of the spell does to its power, as Amplify does, so it pays for itself as Thaumaturge's own strikes do.
+	# Default: 2.0
+	# Range: 0.0 ~ 100.0
+	slamDamagePerPower = 2.0
+	#Ticks after a slam before the same grasp can slam again.
+	# Default: 20
+	# Range: 0 ~ 1200
+	ticksBetweenSlams = 20
+	#Whether a channelled Grasp cast from a wand carries what it takes along the caster's look. Off, it drags and holds what it takes as a spell cast at once does, and the channel ends. An Arcane Projector's channelled hold works either way. Also set by the command /createthaumaturgy grasp channelling true|false.
+	channelledCarry = true
+	#Ticks a wand's channelled carry holds a mob or an item at power 1 before the tentacle tires, lets go and the channel ends. It slips in its grip for the last second. A projector's hold never tires.
+	# Default: 80
+	# Range: 1 ~ 12000
+	carryTicks = 80
+	#Ticks more a carry holds for each step of the power setting above 1.
+	# Default: 40
+	# Range: 0 ~ 12000
+	carryTicksPerPower = 40
+	#Ticks a wand's channelled carry holds a player before they break free, whatever the power.
+	# Default: 40
+	# Range: 1 ~ 12000
+	playerCarryTicks = 40
+	#Blocks above the ground under it a channelled carry can lift what it holds, at power 1. So a drop hurts about as much as a slam, and no more.
+	# Default: 5.0
+	# Range: 0.0 ~ 256.0
+	lift = 5.0
+	#Blocks more it can lift for each step of the power setting above 1.
+	# Default: 2.0
+	# Range: 0.0 ~ 256.0
+	liftPerPower = 2.0
+	#Ticks after a Grasp lets go of a mob before any Grasp can take it again, so no spell can drag or carry one forever. A spell that tries is seen to slip off it. An Arcane Projector's Grasp takes mobs again at once, as its saws want.
+	# Default: 60
+	# Range: 0 ~ 12000
+	regraspTicks = 60
+	#Ticks after a Grasp lets go of a player before any Grasp, a projector's too, can take them again.
+	# Default: 100
+	# Range: 0 ~ 12000
+	playerRegraspTicks = 100
+	#Whether the tentacle out of a wand pulses, blushes and lets out a heart over a grown mob that dies in its grip. Off, or over a baby or a player, it only lets go, as the tentacles out of the ground always do. It is only a sight and a sound.
+	rejoices = true
+
+#The Flux Syringe Blade, a thaumium sword with a capsule of Flux Amalgam that hits harder or is injected into the wielder.
+[flux_syringe_blade]
+	#Flux Amalgam the capsule holds, in mB (125 mB a point of flux).
+	# Default: 1000
+	# Range: 125 ~ 64000
+	capacity = 1000
+	#Attack damage a full capsule adds to a hit; less as it empties.
+	# Default: 6.0
+	# Range: 0.0 ~ 100.0
+	bonusDamage = 6.0
+	#Flux Amalgam a hit spends, in mB.
+	# Default: 25
+	# Range: 0 ~ 64000
+	fluxPerHit = 25
+	#Flux Amalgam an injection takes from the capsule, in mB: a whole dose. A capsule with less gives what it has, for a smaller dose.
+	# Default: 100
+	# Range: 1 ~ 64000
+	injectionFlux = 100
+	#Seconds after an injection before the blade can inject again.
+	# Default: 120
+	# Range: 0 ~ 3600
+	cooldownSeconds = 120
+	#Seconds of Speed and Strength from a dose of almost nothing, the last of a capsule.
+	# Default: 30
+	# Range: 1 ~ 3600
+	minSeconds = 30
+	#Seconds of Speed and Strength from a whole dose.
+	# Default: 60
+	# Range: 1 ~ 3600
+	maxSeconds = 60
+	#Level of the Speed, less one: 0 is Speed I.
+	# Default: 3
+	# Range: 0 ~ 9
+	speedAmplifier = 3
+	#Level of the Strength, less one: 0 is Strength I.
+	# Default: 1
+	# Range: 0 ~ 9
+	strengthAmplifier = 1
+	#Seconds of Thaumaturge's Flux Taint an injection gives.
+	# Default: 5
+	# Range: 0 ~ 600
+	fluxTaintSeconds = 5
+	#Temporary warp a whole dose gives; less from a smaller dose, at least 1.
+	# Default: 6
+	# Range: 0 ~ 100
+	temporaryWarp = 6
+	#Warp that stays (Thaumaturge's normal warp) a whole dose adds on top.
+	# Default: 1
+	# Range: 0 ~ 100
+	stickyWarp = 1
+	#This many injections within the window leave a point of permanent warp, and every one after.
+	# Default: 3
+	# Range: 1 ~ 100
+	permanentWarpAfter = 3
+	#The window, in minutes.
+	# Default: 10
+	# Range: 1 ~ 1440
+	permanentWarpWindowMinutes = 10
+
+#The Arcane Assembler, which crafts arcane workbench recipes from an Arcane Formula.
+[arcane_assembler]
+	#Stress impact in SU per RPM.
+	# Default: 8.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 8.0
+	#How much turning one craft takes: the RPM is added up every tick until it reaches this. At the default a craft takes 5 seconds at 32 RPM and under a second at 256.
+	# Default: 3200
+	# Range: 1 ~ 1000000
+	workPerCraft = 3200
+	#Relay vis, of the crystal's primal, paid for each crystal a craft asks for and the assembler has no crystal item for. Thaumaturge's workbench takes 2 from a vis source. 0 means crystals can only be paid in crystals.
+	# Default: 2.0
+	# Range: 0.0 ~ 1000.0
+	visPerCrystal = 2.0
+	#What a craft's chunk vis is multiplied by when crystal items pay for any of its crystals, rounded up. Thaumaturge's workbench charges 1.25. A craft paid wholly in relay vis pays the plain cost.
+	# Default: 1.25
+	# Range: 1.0 ~ 10.0
+	crystalVisSurcharge = 1.25
+
+#Ventilation: Encased Fans move flux gas along their air streams.
+[ventilation]
+	#How many ticks a fan takes to move the flux gas in its stream one block on. Left alone, gas rises a block every 10 ticks. 0 turns ventilation off.
+	# Default: 5
+	# Range: 0 ~ 200
+	ticksPerBlock = 5
+
+#Thaumaturge items fired from a Potato Cannon.
+[ammunition]
+	#Whether Alumentum fired from a Potato Cannon breaks blocks where it explodes. Thrown by hand it always does; from a cannon it is off unless this is set.
+	explosionsBreakBlocks = false
+
+#The Difference Engine, which saves aspects at the research table below it while spinning.
+[difference_engine]
+	#Stress impact in SU per RPM, like Create's own stress settings.
+	# Default: 4.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 4.0
+	#RPM below which it doesn't help at all.
+	# Default: 16
+	# Range: 1 ~ 256
+	minimumSpeed = 16
+	#RPM at which it reaches its full save chance. Between the minimum and this, the chance grows in proportion to speed.
+	# Default: 256
+	# Range: 1 ~ 1024
+	fullSpeed = 256
+	#Chance at full speed that an aspect written or combined at the table isn't used up. The research table adds the blocks above both its halves together and caps the total at 0.5; Thaumaturge's candle holders give 0.05 to 0.15.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.0
+	saveChance = 0.2
+
+#The Node Overclocker, which stands on a Node Transducer, is its redstone signal while it turns, and refills the energized node below faster.
+[node_overclocker]
+	#Stress impact in SU per RPM with no energized node below.
+	# Default: 8.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 8.0
+	#Stress impact in SU per RPM added for every point of primal vis the energized node below holds when full, so a bigger node is heavier to drive.
+	# Default: 0.25
+	# Range: 0.0 ~ 64.0
+	stressPerNodePoint = 0.25
+	#RPM at which the extra refill is at its full. Below it the extra grows in proportion to speed.
+	# Default: 256
+	# Range: 1 ~ 1024
+	fullSpeed = 256
+	#Refill added at full speed, as a share of what the node refills by itself: 1 doubles it. Each extra point costs the chunk the same vis as one of the node's own. Above 3 the node can't hand out what it refills.
+	# Default: 1.0
+	# Range: 0.0 ~ 3.0
+	extraRefill = 1.0
+
+#The Pressure Crucible, a sealed vat that runs one crucible recipe for less essentia, under pressure, and makes flux goo while it does.
+[pressure_crucible]
+	#How many blocks tall a vat can be. It is 1 to 3 blocks wide, as Create's Fluid Tank is.
+	# Default: 8
+	# Range: 1 ~ 32
+	maxHeight = 8
+	#Share of a recipe's essentia saved per pressure level. The level is the smaller of the heat under the vat (1 per heated burner, 2 per superheated one) and its blocks / 4, at most 18, as for Create's boiler. The default, 0.02, is 36% off at level 18. Whatever this is, a recipe never saves more than its product loses: the essentia it does not keep past its catalyst.
+	# Default: 0.02
+	# Range: 0.0 ~ 0.05
+	discountPerLevel = 0.02
+	#Points of liquid essentia a vat holds per block (10 mB a point), shared between its recipe's aspects as the recipe uses them.
+	# Default: 25
+	# Range: 1 ~ 10000
+	essentiaPerBlock = 25
+	#Water a vat holds per block, in mB.
+	# Default: 1000
+	# Range: 50 ~ 64000
+	waterPerBlock = 1000
+	#Water used by each craft, in mB. Thaumaturge's crucible uses 50.
+	# Default: 50
+	# Range: 0 ~ 1000
+	waterPerCraft = 50
+	#Ticks between crafts, at any pressure level above 0.
+	# Default: 10
+	# Range: 1 ~ 1200
+	craftInterval = 10
+	#Points of flux goo (125 mB each, a point of flux each) made for every point of essentia the discount saves. The default, 0.25, is the flux a basic smelter leaks making that essentia.
+	# Default: 0.25
+	# Range: 0.0 ~ 8.0
+	gooPerSavedPoint = 0.25
+	#Flux goo the sump holds per block, in mB. A full sump is over pressure.
+	# Default: 250
+	# Range: 125 ~ 8000
+	sumpPerBlock = 250
+	#How full the sump is, as a share, when a Relief Valve on the vat opens.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	valveOpensAt = 0.5
+	#Share of what a Relief Valve vents that comes out as flux gas at its mouth; the rest goes into the chunk's aura as flux. Thaumaturge's crucible spills a quarter as gas when it boils over.
+	# Default: 0.25
+	# Range: 0.0 ~ 1.0
+	ventGasShare = 0.25
+	#Seconds a vat stays over pressure, its sump full, before it ruptures.
+	# Default: 30
+	# Range: 1 ~ 3600
+	ruptureSeconds = 30
+	#Whether a rupture's explosion breaks blocks.
+	ruptureBreaksBlocks = true
+	#Most flux a rupture puts into the chunk's aura, for what finds no room as goo and gas.
+	# Default: 256
+	# Range: 0 ~ 10000
+	ruptureMaxAuraFlux = 256
+	#Points of essentia a second that spoil into goo while the vat holds essentia with no pressure; twice as many with no water.
+	# Default: 2
+	# Range: 0 ~ 1000
+	spoilPerSecond = 2
+
+#The Steam Injector, which drives every engine on a boiler at level 18 past Create's top on Ignis, cooled by Aqua. A boiler that runs out of Aqua while it is driven boils dry and bursts.
+[steam_overdrive]
+	#Ignis the injector holds (10 mB each).
+	# Default: 100
+	# Range: 1 ~ 100000
+	ignisCapacity = 100
+	#Aqua the injector holds (10 mB each).
+	# Default: 100
+	# Range: 1 ~ 100000
+	aquaCapacity = 100
+	#Suction it draws from tubes with. 48 empties plain jars but not labelled ones.
+	# Default: 48
+	# Range: 1 ~ 1024
+	suction = 48
+	#Ignis each engine on the boiler burns a minute at +100%, less in proportion at lower settings. At +100% an engine turns at 128 RPM for 32768 SU instead of 64 RPM for 16384.
+	# Default: 12
+	# Range: 0 ~ 100000
+	ignisPerEngineMinute = 12
+	#Aqua each engine on the boiler burns a minute at +100%, less in proportion at lower settings.
+	# Default: 12
+	# Range: 0 ~ 100000
+	aquaPerEngineMinute = 12
+	#Seconds the overdrive takes to climb or fall a step of 25%.
+	# Default: 1
+	# Range: 1 ~ 60
+	stepSeconds = 1
+	#Seconds a driven boiler runs with no Aqua before it bursts. It cools twice as fast once Aqua comes back or the overdrive stops.
+	# Default: 20
+	# Range: 1 ~ 3600
+	boilDrySeconds = 20
+	#Whether a burst's explosion breaks blocks. Either way the boiler's tank and engines are lost.
+	burstBreaksBlocks = true
+
+#The Flux Hood and the Flux Drain, which take flux gas and goo up as goo, for a pump to carry off.
+[flux_hood]
+	#How many blocks under a hood it draws flux gas from. A whole block in between stops it.
+	# Default: 6
+	# Range: 1 ~ 32
+	reach = 6
+	#How many blocks wide a canopy can be. It is square and one block thick.
+	# Default: 5
+	# Range: 1 ~ 9
+	maxWidth = 5
+	#Flux goo a hood holds per block, in mB (125 mB a point of flux). Gas taken with no room lets all of it go.
+	# Default: 2000
+	# Range: 125 ~ 64000
+	capacityPerBlock = 2000
+	#Fan speed that carries a point of flux gas a second into a hood, in RPM. The default, 16, is 16 points a second from a fan at 256 RPM. Fans on one hood add up.
+	# Default: 16
+	# Range: 1 ~ 256
+	rpmPerPoint = 16
+	#How full a hood is, as a share, when it starts to drip and hiss.
+	# Default: 0.75
+	# Range: 0.0 ~ 1.0
+	warnAt = 0.75
+	#Flux goo a Flux Drain holds, in mB. Full, it takes no more.
+	# Default: 1000
+	# Range: 125 ~ 64000
+	drainCapacity = 1000
+	#Ticks between each point a Flux Drain takes from the block above it.
+	# Default: 5
+	# Range: 1 ~ 1200
+	drainInterval = 5
+
+#The Instability Siphon: a Siphon Bearing over an infusion altar, turning a rotor of plates built round the block under it. Full circles of plates make its tiers.
+[instability_siphon]
+	#Stress impact of the bearing itself, in SU per RPM, like Create's own stress settings.
+	# Default: 4.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 4.0
+	#Stress impact added by each plate on the rotor, in SU per RPM. A tier 3 rotor of 68 plates at 32 RPM takes 4480 SU at the defaults.
+	# Default: 2.0
+	# Range: 0.0 ~ 256.0
+	stressPerPlate = 2.0
+	#The speed a Siphon has to turn at to draw anything, in RPM.
+	# Default: 32
+	# Range: 1 ~ 256
+	minimumRpm = 32
+	#How many blocks above an infusion matrix a Siphon Bearing can hang, in the matrix's own column.
+	# Default: 10
+	# Range: 2 ~ 32
+	reach = 10
+	#Stability points a tier 1 rotor (a full circle of radius 2, 20 plates) takes from its matrix a cycle. A matrix loses up to its recipe's instability / 5 a cycle, so 0.8 covers instability 4.
+	# Default: 0.8
+	# Range: 0.0 ~ 100.0
+	tier1Draw = 0.8
+	#The same for tier 2 (radius 3, 36 plates). 1.4 covers instability 7.
+	# Default: 1.4
+	# Range: 0.0 ~ 100.0
+	tier2Draw = 1.4
+	#The same for tier 3 (radius 4, 68 plates). 2.0 covers instability 10, the most any recipe has.
+	# Default: 2.0
+	# Range: 0.0 ~ 100.0
+	tier3Draw = 2.0
+	#Points of flux goo (125 mB each) for each point of stability a Thaumium or Brass Gutter Plate draws.
+	# Default: 1.0
+	# Range: 0.0 ~ 16.0
+	gooPerInstability = 1.0
+	#How far from a Siphon, in blocks across the floor, the goo of its Thaumium Plates can land.
+	# Default: 6
+	# Range: 1 ~ 16
+	spillRadius = 6
+	#Goo the bearing holds from its Brass Gutter Plates, in mB. Full, what they draw pours straight down.
+	# Default: 2000
+	# Range: 125 ~ 64000
+	gutterCapacity = 2000
+	#How full the bearing's goo is, as a share, when it starts to drip and its goggles go red.
+	# Default: 0.75
+	# Range: 0.0 ~ 1.0
+	gutterWarnAt = 0.75
+	#Points of Vacuos a Void Siphon Plate eats for each point of stability it draws.
+	# Default: 0.5
+	# Range: 0.0 ~ 16.0
+	vacuosPerInstability = 0.5
+	#Points of Vacuos the bearing holds for its Void Siphon Plates.
+	# Default: 64
+	# Range: 1 ~ 4096
+	vacuosCapacity = 64
+
+#The Engineering Curio, found in the arcane engineers' ruins.
+[curio]
+	#Research points a curio gives, as a share of the Arcane Engineering tab's formula (Machina 10, Motus 10, Ordo 5, Potentia 5, Metallum 5, Fabrico 5).
+	# Default: 1.0
+	# Range: 0.0 ~ 10.0
+	pointsShare = 1.0
+
+#The Drafting Table, which copies Arcane Formulas.
+[drafting_table]
+	#Ticks one copy takes.
+	# Default: 40
+	# Range: 1 ~ 1200
+	copyTicks = 40
+
+#The Arcane Engineer's trades. Each is rolled when the villager reaches its level, so a change applies to trades rolled after it.
+[arcane_engineer]
+	#Novice: brass ingots it buys for one emerald.
+	# Default: 4
+	# Range: 1 ~ 64
+	brassIngotsPerEmerald = 4
+	#Novice: andesite alloy it buys for one emerald.
+	# Default: 12
+	# Range: 1 ~ 64
+	andesiteAlloyPerEmerald = 12
+	#Novice: blank Arcane Formulas it sells for one emerald.
+	# Default: 3
+	# Range: 1 ~ 64
+	blankFormulasPerEmerald = 3
+	#Apprentice: phials of its aspect it buys for one emerald.
+	# Default: 2
+	# Range: 1 ~ 64
+	phialsPerEmerald = 2
+	#Apprentice: emeralds it pays for a Precision Mechanism.
+	# Default: 2
+	# Range: 1 ~ 64
+	precisionMechanismEmeralds = 2
+	#Expert: emeralds it pays for a Thaumic Mechanism.
+	# Default: 4
+	# Range: 1 ~ 64
+	thaumicMechanismEmeralds = 4
+	#Master: emeralds it pays for a thaumium Gyroscopic Stabiliser.
+	# Default: 10
+	# Range: 1 ~ 64
+	gyroscopeEmeralds = 10
+	#Journeyman: emeralds (and a compass) for a map to the nearest Engineer's Workshop.
+	# Default: 12
+	# Range: 1 ~ 64
+	workshopMapEmeralds = 12
+	#Master: emeralds (and a compass) for a map to the nearest Colossus Foundry.
+	# Default: 24
+	# Range: 1 ~ 64
+	foundryMapEmeralds = 24
+
+#The Perditio Shaft, a shaft that cracks when its network is overstressed, so the branch beyond it stops and the rest keeps turning.
+[perditio_shaft]
+	#Share of the network's capacity in use from which it creaks and smokes.
+	# Default: 0.9
+	# Range: 0.0 ~ 1.0
+	warnAt = 0.9
+	#Ticks between two cracks on one overstressed network. The shafts crack one at a time, the one farthest from the generator first, until the network runs.
+	# Default: 5
+	# Range: 1 ~ 200
+	crackTicks = 5
+	#Ticks a shaft that was just joined again can't crack.
+	# Default: 20
+	# Range: 0 ~ 1200
+	mendGraceTicks = 20
+
+#The Motus Governor, a block on a shaft that lets its whole network turn past Create's speed limit (maxRotationSpeed in Create's own config) for as long as it has Motus.
+[motus_governor]
+	#RPM a network with a fed governor may reach. At or under Create's own limit the governor does nothing.
+	# Default: 512
+	# Range: 64 ~ 4096
+	maxSpeed = 512
+	#Points of Motus it holds.
+	# Default: 32
+	# Range: 1 ~ 1000
+	capacity = 32
+	#Suction it draws from tubes with. 48 empties plain jars but not labelled ones.
+	# Default: 48
+	# Range: 1 ~ 1024
+	suction = 48
+	#What a point of Motus pays for: this many parts above Create's limit for one second, or one part for this many seconds. The default keeps 16 parts going for 30 seconds a point.
+	# Default: 480
+	# Range: 1 ~ 1000000
+	partSecondsPerPoint = 480
+	#It creaks and smokes while the Motus it holds will last less than this many seconds.
+	# Default: 60
+	# Range: 0 ~ 3600
+	warnSeconds = 60
+	#Stress it costs at 1 RPM while it lets its network run.
+	# Default: 4.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 4.0
+
+#The Void Metal Gearbox, a gearbox with a shaft on all six faces; a wand's click turns one face's direction over.
+[void_metal_gearbox]
+	#Centivis of Ordo, and of Perditio, a wand pays to turn a face over. 0 makes it free.
+	# Default: 5
+	# Range: 0 ~ 10000
+	flipCentivis = 5
+
+#The Eldritch Watcher, which keeps its chunk loaded while it has flux goo and rotation, and gives warp to the players it sees.
+[eldritch_watcher]
+	#Whether an open watcher keeps chunks loaded. Off, it still opens and watches, but loads nothing.
+	loadsChunks = true
+	#Watchers one player may have open at once, counted by who placed them. 0 lets none open.
+	# Default: 2
+	# Range: 0 ~ 64
+	maxOpenPerPlayer = 2
+	#Chunks it keeps loaded round its own: 0 is its own chunk only, 1 the 3 by 3 round it.
+	# Default: 0
+	# Range: 0 ~ 2
+	chunkRadius = 0
+	#Flux goo it holds, in mB.
+	# Default: 2000
+	# Range: 125 ~ 64000
+	gooCapacity = 2000
+	#Flux goo it burns a minute while open, in mB.
+	# Default: 250
+	# Range: 0 ~ 64000
+	gooPerMinute = 250
+	#Stress it puts on the shaft, in SU per RPM.
+	# Default: 8.0
+	# Range: 0.0 ~ 1024.0
+	stressImpact = 8.0
+	#Slowest the shaft may turn for it to stay open.
+	# Default: 32
+	# Range: 1 ~ 256
+	minimumRpm = 32
+	#Blocks it sees players from, if no block is between them.
+	# Default: 8
+	# Range: 1 ~ 32
+	gazeRange = 8
+	#Seconds between two gazes. Each gaze gives warp to every player it sees.
+	# Default: 20
+	# Range: 1 ~ 3600
+	gazeSeconds = 20
+	#Temporary warp a gaze gives a player it sees.
+	# Default: 1
+	# Range: 0 ~ 100
+	gazeWarp = 1
+	#Warp that stays, given instead to a player looking straight into its eye when it gazes.
+	# Default: 1
+	# Range: 0 ~ 100
+	stareWarp = 1
+
+#Aer phials used on Create's backtanks.
+[bottled_air]
+	#Backtank air a point of Aer gives. A phial holds 10; a copper backtank holds 900 air, a second each under water.
+	# Default: 30
+	# Range: 1 ~ 1000
+	airPerAer = 30
+
+#The Dense Essentia Tube: Thaumaturge's tube made thicker, which moves essentia in batches. A plain tube moves 1 point a hop every 5 ticks.
+[dense_tube]
+	#Points a dense tube holds, and so moves a hop at a time.
+	# Default: 10
+	# Range: 1 ~ 1000
+	capacity = 10
+	#Ticks between a dense tube's hops. 5 is a plain tube's pace; at 10 points that is 40 a second.
+	# Default: 5
+	# Range: 1 ~ 100
+	stepTicks = 5
+
+#The Thaumium Mainspring, which stores rotation: wound through its winder, let go through its drive by a redstone signal, on a curve of five steps from slow and strong to fast and weak.
+[thaumium_mainspring]
+	#A full spring gives this much SU for capacitySeconds. What it holds is the two multiplied.
+	# Default: 2048
+	# Range: 1 ~ 1000000
+	capacitySu = 2048
+	#Seconds a full spring gives capacitySu for.
+	# Default: 600
+	# Range: 1 ~ 86400
+	capacitySeconds = 600
+	#SU per RPM the winder takes from the network turning it. All of it goes into the spring.
+	# Default: 32.0
+	# Range: 0.0 ~ 16384.0
+	winderStressImpact = 32.0
+	#RPM it turns at while it is wound over 80%.
+	# Default: 16
+	# Range: 1 ~ 256
+	step1Rpm = 16
+	#SU per RPM it gives while it is wound over 80%.
+	# Default: 256.0
+	# Range: 0.0 ~ 16384.0
+	step1SuPerRpm = 256.0
+	#RPM it turns at while it is wound 60 to 80%.
+	# Default: 32
+	# Range: 1 ~ 256
+	step2Rpm = 32
+	#SU per RPM it gives while it is wound 60 to 80%.
+	# Default: 64.0
+	# Range: 0.0 ~ 16384.0
+	step2SuPerRpm = 64.0
+	#RPM it turns at while it is wound 40 to 60%.
+	# Default: 64
+	# Range: 1 ~ 256
+	step3Rpm = 64
+	#SU per RPM it gives while it is wound 40 to 60%.
+	# Default: 16.0
+	# Range: 0.0 ~ 16384.0
+	step3SuPerRpm = 16.0
+	#RPM it turns at while it is wound 20 to 40%.
+	# Default: 128
+	# Range: 1 ~ 256
+	step4Rpm = 128
+	#SU per RPM it gives while it is wound 20 to 40%.
+	# Default: 4.0
+	# Range: 0.0 ~ 16384.0
+	step4SuPerRpm = 4.0
+	#RPM it turns at while it is wound under 20%.
+	# Default: 256
+	# Range: 1 ~ 256
+	step5Rpm = 256
+	#SU per RPM it gives while it is wound under 20%.
+	# Default: 1.0
+	# Range: 0.0 ~ 16384.0
+	step5SuPerRpm = 1.0
+	#Centivis of Ordo, and of Perditio, it draws a second from a vis relay while it runs tuned to them.
+	# Default: 20
+	# Range: 1 ~ 10000
+	centivisPerSecond = 20
+	#Flux a second it lets into the aura while Perditio holds its speed.
+	# Default: 0.1
+	# Range: 0.0 ~ 100.0
+	perditioFluxPerSecond = 0.1
+	#Seconds it can be wound past full before it snaps. The count goes back down as fast once the winding stops.
+	# Default: 30
+	# Range: 1 ~ 3600
+	snapSeconds = 30
+	#Whether a snap's explosion breaks blocks. Either way the mainspring is lost.
+	snapBreaksBlocks = true
+	#Strength of a snap's explosion. TNT is 4.
+	# Default: 3.0
+	# Range: 0.0 ~ 10.0
+	snapPower = 3.0
+
+#The Brass Colossus, the Colossus Foundry's boss.
+[brass_colossus]
+	#Its health.
+	# Default: 500
+	# Range: 1 ~ 100000
+	health = 500
+	#The most one blow takes off it, whatever dealt the blow and however hard.
+	# Default: 12.0
+	# Range: 1.0 ~ 10000.0
+	blowCap = 12.0
+	#The most one blow of the Flux Syringe Blade takes off it. Nothing lowers its health by more than this at once.
+	# Default: 18.0
+	# Range: 1.0 ~ 10000.0
+	syringeBlowCap = 18.0
+	#Share of a blow it takes while its spring is wound; kneeling to rewind it takes the blow whole.
+	# Default: 0.25
+	# Range: 0.0 ~ 1.0
+	armouredShare = 0.25
+	#Seconds its spring runs before it must kneel and rewind; three quarters of that below half health, half below a quarter.
+	# Default: 24
+	# Range: 5 ~ 600
+	windSeconds = 24
+	#Damage of its slam to whoever is under the fists.
+	# Default: 14.0
+	# Range: 0.0 ~ 1000.0
+	slamDamage = 14.0
+	#Damage of the ring a slam sends along the floor, to players standing on it as it passes.
+	# Default: 8.0
+	# Range: 0.0 ~ 1000.0
+	waveDamage = 8.0
+	#Damage of its sweep.
+	# Default: 10.0
+	# Range: 0.0 ~ 1000.0
+	sweepDamage = 10.0
+	#Damage of a thrown cog.
+	# Default: 6.0
+	# Range: 0.0 ~ 1000.0
+	cogDamage = 6.0
+	#Damage to whoever it grabs and throws, as it lets go. Where they land may hurt too.
+	# Default: 8.0
+	# Range: 0.0 ~ 1000.0
+	throwDamage = 8.0
+	#Damage to whoever it grabs and pounds into the floor.
+	# Default: 14.0
+	# Range: 0.0 ~ 1000.0
+	poundDamage = 14.0
+	#Damage to whoever is under it when it leaps and lands on its belly. Somebody it catches as it lands takes half.
+	# Default: 16.0
+	# Range: 0.0 ~ 1000.0
+	flopDamage = 16.0
+	#Share of its attacks that are feints, beginning as one attack and turning into another. Half this above half health. 0 for none.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.0
+	feintShare = 0.3
+	#Woken in a casting hall, the hall is put back as it was built and shut for the fight: no building or breaking, a barred doorway, no flying, no ender pearls or chorus fruit. False leaves the hall alone.
+	lockHall = true

@@ -1,0 +1,18 @@
+filename = 'kaleidoscope_end-1.1.0-neoforge+mc1.21.1.jar'
+name = 'Kaleidoscope End'
+side = 'both'
+x-prismlauncher-dependencies = []
+x-prismlauncher-loaders = [ 'neoforge' ]
+x-prismlauncher-mc-versions = [ '1.21.1' ]
+x-prismlauncher-release-type = 'beta'
+x-prismlauncher-version-number = '1.1.0-neoforge+mc1.21.1'
+
+[download]
+hash = '29fe3d9bf9e86cd41a0c0d5eb8ff2a98c174a4bc5063b5b97d1997e281b36c02802a6485f1b5c8b5922207627f676f8f0b4a777608cd3085295eee122d983fee'
+hash-format = 'sha512'
+mode = 'url'
+url = 'https://cdn.modrinth.com/data/8GKUHBM6/versions/oKY1uXAO/kaleidoscope_end-1.1.0-neoforge%2Bmc1.21.1.jar'
+
+[update.modrinth]
+mod-id = '8GKUHBM6'
+version = 'oKY1uXAO'

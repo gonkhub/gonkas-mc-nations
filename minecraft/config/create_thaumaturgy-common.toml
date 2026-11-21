@@ -1,0 +1,158 @@
+#Recipe families. Turning one off removes those recipes; datapacks can also use the condition {"type": "create_thaumaturgy:feature", "feature": "<name>"} in their own recipes.
+[recipes]
+	#Crushing Thaumaturge's amber, cinnabar and quartz ores.
+	ore_crushing = true
+	#Crushing native clusters into crushed ores.
+	cluster_crushing = true
+	#Purifying raw zinc into a Native Zinc Cluster in a crucible, and smelting it.
+	zinc_cluster = true
+	#Milling shimmerleaf and cinderpearl.
+	plant_milling = true
+	#Pressing thaumium and void metal plates.
+	plate_pressing = true
+	#Cleaning clogged condenser lattices by Bulk Purifying.
+	lattice_purifying = true
+	#Purifying tainted blocks and drops with a fan and purifying fluid.
+	fan_purifying = true
+	#Making Arcane Casing by item application.
+	arcane_casing = true
+	#Cutting and crafting the decorative blocks: metalwork, windows, framed warded glass, roofing and cut arcane stone.
+	decorative_blocks = true
+	#The Warded Spout's arcane recipe, and the Warded Tank's and Item Drain's sequenced assembly.
+	warded_blocks = true
+	#The Thaumic Mechanism's sequenced assembly.
+	thaumic_mechanism = true
+	#The Infernal and Stabilising Mechanisms' sequenced assembly.
+	machine_mechanisms = true
+	#The Thaumic Turbine's arcane recipe.
+	thaumic_turbine = true
+	#The recipes of all three Gyroscopic Stabilisers.
+	gyroscopic_stabiliser = true
+	#The Difference Engine's arcane recipe.
+	difference_engine = true
+	#The Node Dynamo's arcane recipe.
+	node_dynamo = true
+	#The Node Overclocker's arcane recipe.
+	node_overclocker = true
+	#The Infernal Crusher's arcane recipe.
+	infernal_crusher = true
+	#The Aura Diffuser's arcane recipe.
+	aura_diffuser = true
+	#The Ignis Burner's infusion.
+	ignis_burner = true
+	#The Steam Injector's arcane recipe.
+	steam_overdrive = true
+	#The Thaumium Mainspring's arcane recipe.
+	thaumium_mainspring = true
+	#The Dense Essentia Tube's arcane recipe.
+	dense_tube = true
+	#The Smart Essentia Tubes' arcane recipes.
+	smart_tube = true
+	#The Mirror Frogport's infusion.
+	mirror_frogport = true
+	#The Courier Seal's crucible recipe.
+	golem_post = true
+	#The Stockroom Seal's crucible recipe.
+	golem_stockroom = true
+	#The Crank Seal's crucible recipe.
+	golem_crank = true
+	#The Golem Treadwheel's arcane recipe.
+	golem_treadwheel = true
+	#The Taintacle Wheel's arcane recipe.
+	taintacle_wheel = true
+	#The Flux Syringe Blade's infusion, and the Mixer recipes for the Flux Amalgam it runs on.
+	flux_syringe_blade = true
+	#The Altar Keeper Seal's crucible recipe.
+	altar_keeper = true
+	#The Arcane Formula's arcane recipe.
+	arcane_formula = true
+	#The Drafting Table's arcane recipe.
+	drafting_table = true
+	#The Arcane Assembler's arcane recipe.
+	arcane_assembler = true
+	#The Infusion Trigger's arcane recipe.
+	infusion_trigger = true
+	#The Infusion Frogport's infusion.
+	infusion_frogport = true
+	#The Thaumium Drill's arcane recipe.
+	thaumium_drill = true
+	#The Arcane Projector's arcane recipe.
+	arcane_projector = true
+	#Salis Mundus making a Funnel Mirror from an item mirror with a brass funnel on it.
+	funnel_mirror = true
+	#The Pressure Crucible's and the Relief Valve's arcane recipes.
+	pressure_crucible = true
+	#The Flux Hood's, the Flux Vent's and the Flux Drain's arcane recipes.
+	flux_hood = true
+	#The Siphon Bearing's infusion and the arcane recipes of its three plates.
+	instability_siphon = true
+	#Filling a shaft with Perditio in a Spout to make a Perditio Shaft.
+	perditio_shaft = true
+	#The Motus Governor's arcane recipe.
+	motus_governor = true
+	#The Void Metal Gearbox's arcane recipe.
+	void_metal_gearbox = true
+	#The Triaxial Cogwheel's arcane recipe.
+	triaxial_cogwheel = true
+	#The Eldritch Watcher's infusion.
+	eldritch_watcher = true
+	#Alumentum, the Causality Collapser and Nitor as Potato Cannon ammunition.
+	arcane_ammunition = true
+	#Second recipes for Thaumaturge items that take Create parts: the Complex Arcane Mechanism from a Precision Mechanism, the Arcane Bore with a Thaumium Drill.
+	create_part_alternatives = true
+
+#Behaviour.
+[behaviour]
+	#Give items made by Create's processing recipes and sequenced assembly aspects.
+	createRecipeAspects = true
+	#Share of the ingredients' aspects a Create recipe passes on, before dividing by the output count. Thaumaturge uses 0.75 for its own crafting; above 1 would let machines create aspects.
+	# Default: 0.75
+	# Range: 0.0 ~ 1.0
+	createRecipeAspectShare = 0.75
+	#Goggles of Revealing count as Engineer's Goggles.
+	revealingGogglesAsEngineersGoggles = true
+	#Funnels, chutes and other automation can load and unload infusion and recharge pedestals.
+	pedestalAutomation = true
+	#Spouts and item drains can fill and empty phials, jars and the harness's fuel jar.
+	essentiaItemFluids = true
+	#A mirror hanging on an inventory puts what arrives into it instead of throwing it out, and a chute or funnel at a mirror is joined to it by a short piece of chute.
+	mirrorAutomation = true
+	#A Create pump on the bottom of a Flux Condenser takes its flux as flux goo, 125 mB a point, instead of a tube taking it as Vitium.
+	condenserTap = true
+	#A Brain in a Jar beside a Stock Ticker runs the shop, as a Blaze Burner beside one does.
+	brainStockKeeper = true
+	#With JEI, the + button on an arcane workbench recipe in a Stock Keeper's screen orders its grid and its crystals, and on an infusion its items but not its aspects, which the altar draws from jars; recipes not yet researched are refused. Off, Create's own handler takes them.
+	arcaneOrders = true
+	#An Aer phial tops up the backtank worn, or a placed one it is used on.
+	aerBacktankRefill = true
+
+#World generation: the arcane engineers' ruins and their houses in villages. Read before the world loads, so restart the game after changing them; worlds keep what was already made.
+[worldgen]
+	#The Arcane Engineer's workshop among the houses of villages.
+	engineer_houses = true
+
+	#Engineer's Workshops: small ruins with derelict machines, in four looks by biome.
+	[worldgen.engineers_workshop]
+		#Whether they are made at all.
+		enabled = true
+		#At most one in each square of this many chunks a side.
+		# Default: 40
+		# Range: 2 ~ 4096
+		spacing = 40
+		#Chunks between two at least; less than the spacing.
+		# Default: 15
+		# Range: 1 ~ 4095
+		separation = 15
+
+	#Colossus Foundries: the engineers' dungeon, a gatehouse over corridors, rooms with running mechanisms, spawners and a casting hall. Up to 128 blocks from its gatehouse each way.
+	[worldgen.colossus_foundry]
+		#Whether they are made at all.
+		enabled = true
+		#At most one in each square of this many chunks a side.
+		# Default: 72
+		# Range: 2 ~ 4096
+		spacing = 72
+		#Chunks between two at least; less than the spacing.
+		# Default: 24
+		# Range: 1 ~ 4095
+		separation = 24

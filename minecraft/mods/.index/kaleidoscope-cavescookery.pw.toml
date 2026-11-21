@@ -1,0 +1,29 @@
+filename = 'KaleidoscopeCavescookery-2.0.0-1.21.1-Neoforge.jar'
+name = 'Kaleidoscope Caves Cookery'
+side = 'server'
+x-prismlauncher-loaders = [ 'neoforge' ]
+x-prismlauncher-mc-versions = [ '1.21.1' ]
+x-prismlauncher-release-type = 'release'
+x-prismlauncher-version-number = 'KaleidoscopeCavescookery-2.0.0-1.21.1 Neoforge.jar'
+
+[download]
+hash = '3b64310f515b9c7ef18e335c7b8250736b819eac'
+hash-format = 'sha1'
+mode = 'metadata:curseforge'
+url = ''
+
+[update.curseforge]
+file-id = 9609287
+project-id = 1761061
+
+[[x-prismlauncher-dependencies]]
+addonId = '924854'
+type = 'REQUIRED'
+
+[[x-prismlauncher-dependencies]]
+addonId = '1613404'
+type = 'REQUIRED'
+
+[[x-prismlauncher-dependencies]]
+addonId = '1309203'
+type = 'REQUIRED'
