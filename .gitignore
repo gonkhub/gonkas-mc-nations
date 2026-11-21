@@ -18,6 +18,10 @@
 # GitHub release notes, so it has to be in the repo at the tag it describes, or the
 # release that quotes it cannot be reconstructed later.
 !/CHANGELOG.md
+# CLAUDE.md is repo mechanics, not design notes: how to edit files here without
+# flipping line endings, where the version lives, why the ledger is append-only.
+# A clone needs it; docs/ stays local on purpose, this does not.
+!/CLAUDE.md
 
 # ── This machine's view of the live server ──
 # Holds the server address and the FTP account name. Never tracked; the example beside
