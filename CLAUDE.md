@@ -105,3 +105,19 @@ be rolled forward to one that can, rather than left unpublished.
 
 Standing instruction from the user, 2026-11-21, after 0.1.0 went to the server and sat
 unpublished.
+
+## GitHub rejects any tracked file over 100 MB
+
+**Check jar sizes before un-ignoring them.** A push carrying a file over 100 MB is
+rejected outright by the server, and the failure comes at `release.py publish` - after the
+server has already been deployed, which is the worst moment to discover it.
+
+Hit on 2026-11-21: `places-0.5.5-neoforge-1.21.1.jar` is 122 MB. It had been tracked along
+with eighteen other player-supplied jars, and the first push attempt failed. Because none
+of the commits were pushed yet, the fix was to collapse and rewrite them; once a blob that
+size is in pushed history it is far more painful.
+
+    git ls-files -z minecraft/mods | xargs -0 ls -l | awk '$5 > 100000000'
+
+Note the asymmetry: a RELEASE ASSET may be up to 2 GiB, which is why a 721 MB client zip
+is fine. The 100 MB limit is on files inside the git repository.
