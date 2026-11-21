@@ -580,6 +580,30 @@ def cmd_publish(args):
          "--title", "%s %s" % (meta["name"], version),
          "--notes-file", str(notes_file)] + assets)
 
+    # main tracks what players actually have. Work lands on dev; main moves only here,
+    # once a release exists, so "what is on main" and "what someone could have downloaded"
+    # are the same question. Fast-forward ONLY: if main has drifted off the released
+    # history, that is a real situation needing a human, not something to force past.
+    # Ancestry by comparing hashes, not by `merge-base --is-ancestor`: that reports
+    # through its exit code, and packmeta.git hands back stdout only.
+    main_sha = packmeta.git("rev-parse", "--verify", "--quiet", "refs/heads/main",
+                            check=False)
+    on_main = packmeta.git("rev-parse", "--abbrev-ref", "HEAD") == "main"
+    if main_sha and on_main:
+        # Released straight off main. `git branch -f` refuses to touch the checked-out
+        # branch, and raising here would fail publish AFTER the release went public.
+        print()
+        print("main is the current branch, so it is already at %s." % tag)
+    elif main_sha:
+        if packmeta.git("merge-base", "main", tag) != main_sha:
+            print()
+            print("NOT moving main: it is not an ancestor of %s, so this would not be a" % tag)
+            print("fast-forward. Someone has committed to main directly. Sort that out by")
+            print("hand - main is what players have and it should never be rewritten.")
+        else:
+            run(["git", "branch", "-f", "main", tag])
+            run(["git", "push", "origin", "main"])
+
     print()
     print("published  https://github.com/%s/releases/tag/%s" % (repo, tag))
     print("Players download the zip from that page. Post the link.")
