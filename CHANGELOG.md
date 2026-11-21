@@ -18,6 +18,12 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.1.2 - 2026-11-21
+
+- Sculk mobs now hunt animals, so the sculk grows where there is life to kill.
+- The pack download no longer carries developer files it never needed.
+
+
 ## 0.1.1 - 2026-11-21
 
 - The sculk no longer claims whole chunks. It spreads from catalysts, growing where
