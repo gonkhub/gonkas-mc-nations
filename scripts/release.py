@@ -605,23 +605,37 @@ def cmd_publish(args):
     # history, that is a real situation needing a human, not something to force past.
     # Ancestry by comparing hashes, not by `merge-base --is-ancestor`: that reports
     # through its exit code, and packmeta.git hands back stdout only.
-    main_sha = packmeta.git("rev-parse", "--verify", "--quiet", "refs/heads/main",
-                            check=False)
+    # AGAINST origin/main, NOT the local branch. The local one can be stale or can have
+    # been moved by a previous half-finished publish, and then the guard waves through a
+    # push the server rejects anyway - which is exactly what happened on 2026-11-21, when
+    # a README had been edited in the GitHub web UI. The remote is the thing we are about
+    # to write to, so the remote is what has to be checked. Fetch first or the answer is
+    # whatever we last happened to see.
+    run(["git", "fetch", "origin", "--quiet"])
+    remote_main = packmeta.git("rev-parse", "--verify", "--quiet", "refs/remotes/origin/main",
+                               check=False)
     on_main = packmeta.git("rev-parse", "--abbrev-ref", "HEAD") == "main"
-    if main_sha and on_main:
+    if remote_main and on_main:
         # Released straight off main. `git branch -f` refuses to touch the checked-out
         # branch, and raising here would fail publish AFTER the release went public.
         print()
         print("main is the current branch, so it is already at %s." % tag)
-    elif main_sha:
-        if packmeta.git("merge-base", "main", tag) != main_sha:
+    elif remote_main:
+        if packmeta.git("merge-base", remote_main, tag) != remote_main:
             print()
-            print("NOT moving main: it is not an ancestor of %s, so this would not be a" % tag)
-            print("fast-forward. Someone has committed to main directly. Sort that out by")
-            print("hand - main is what players have and it should never be rewritten.")
+            print("NOT moving main: origin/main is not an ancestor of %s, so this would" % tag)
+            print("not be a fast-forward. Someone has committed to main directly - a web-UI")
+            print("edit does it. Sort that out by hand; main is what players have and it")
+            print("should never be rewritten.")
+            print()
+            print("    git log --oneline %s..origin/main" % tag)
         else:
             run(["git", "branch", "-f", "main", tag])
             run(["git", "push", "origin", "main"])
+    else:
+        # No main on the remote yet: the first release creates it.
+        run(["git", "branch", "-f", "main", tag])
+        run(["git", "push", "origin", "main"])
 
     print()
     print("published  https://github.com/%s/releases/tag/%s" % (repo, tag))
