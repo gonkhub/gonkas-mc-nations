@@ -380,6 +380,12 @@ def cmd_verify(args):
             try:
                 actual = session.size(remote)
             except ftplib.all_errors as exc:
+                # "missing" is an inference, not a fact: SIZE also fails on a file the
+                # server declines to stat, which is how the world walker came to
+                # recurse into a .dat. It errs the safe way - a false "missing" tells
+                # you to re-run an upload that is idempotent anyway - but if this fires
+                # on a file you can see in the panel, check the server is stopped
+                # before believing it.
                 bad.append((rel, size, "missing (%s)" % exc))
                 continue
             if actual != size:
@@ -398,6 +404,72 @@ def cmd_verify(args):
     return 0
 
 
+def listdir(session, remote_dir):
+    """[(name, is_dir, size)] for one remote directory.
+
+    MLSD when the server has it: authoritative types AND sizes in a single round trip.
+    This host advertises MLST in FEAT with type*;size*, so it does.
+
+    The fallback is NLST plus a SIZE per entry, treating a SIZE failure as "directory".
+    That is what the world walker used to do unconditionally, and it is wrong twice
+    over. SIZE also fails on a file the server declines to stat - a running server
+    rewriting a mod's .dat, say - and the walker then recursed INTO that file and asked
+    the server to list it, which produced
+    nations/DIM-1/data/x.dat/x.dat and "550 Unknown error 187".
+    It is also a round trip per entry: 338 avoidable ones on this world.
+    """
+    try:
+        out = []
+        for name, facts in session.mlsd(remote_dir, facts=["type", "size"]):
+            if name in (".", ".."):
+                continue
+            kind = facts.get("type")
+            if kind == "dir":
+                out.append((name, True, None))
+            elif kind == "file":
+                out.append((name, False, int(facts.get("size", -1))))
+            # cdir/pdir and any OS specials are deliberately ignored
+        return out
+    except ftplib.all_errors:
+        pass
+
+    entries = []
+    session.retrlines("NLST " + remote_dir, entries.append)
+    out = []
+    for entry in entries:
+        name = entry.rsplit("/", 1)[-1]
+        if name in (".", ".."):
+            continue
+        try:
+            out.append((name, False, session.size(remote_dir + "/" + name)))
+        except ftplib.all_errors:
+            out.append((name, True, None))
+    return out
+
+
+def game_port_open(address, timeout=5):
+    """True if something accepts TCP on the Minecraft port, i.e. the server is up.
+
+    release.py's deploy used to ASK whether the server was stopped and take the answer
+    on trust. It does not have to: the game port either accepts a connection or it does
+    not. This turns the one unverified claim in the deploy path into a measured fact.
+    """
+    if not address:
+        return None                      # unknown, not "stopped"
+    host, _, port = address.rpartition(":")
+    if not host:
+        return None
+    try:
+        port = int(port)
+    except ValueError:
+        return None
+    try:
+        socket.create_connection((host, port), timeout=timeout).close()
+        return True
+    except OSError:
+        return False
+
+
 def cmd_backup_world(args):
     cfg = ftp_config()
     local_cfg = packmeta.local()
@@ -407,6 +479,24 @@ def cmd_backup_world(args):
     stamp = time.strftime("%Y-%m-%d_%H%M%S")
     target = base / ("%s_%s" % (world, stamp))
 
+    running = game_port_open(local_cfg.get("server_address"))
+    if running and not args.allow_running:
+        raise packmeta.PackError(
+            "the server is RUNNING - %s accepts connections.\n"
+            "    A world cannot be copied consistently while it is being written to."
+            "\n    level.dat is re-saved every few minutes and region files are"
+            " flushed\n    mid-copy, so what you get is pieces of two different"
+            " moments. That is\n    worse than no backup, because it looks like"
+            " one.\n\n    Stop the server in the Multicraft panel, then re-run."
+            " If you want a\n    rough copy anyway and understand it may be torn:"
+            " --allow-running"
+            % local_cfg.get("server_address"))
+    if running is None:
+        print("note       server_address not set, so I cannot check the server is down")
+    elif running:
+        print("WARNING    the server is RUNNING and this copy may be torn"
+              " (--allow-running)")
+
     print("backing up %s -> %s" % (world, target))
     session = connect(cfg)
     count = 0
@@ -414,46 +504,59 @@ def cmd_backup_world(args):
     try:
         session.voidcmd("TYPE I")
 
-        def walk(remote_dir, local_dir):
+        def walk(remote_dir, local_dir, is_root=False):
             nonlocal count, total
-            entries = []
             try:
-                session.retrlines("NLST " + remote_dir, entries.append)
+                entries = listdir(session, remote_dir)
             except ftplib.all_errors as exc:
+                # Only the ROOT listing says anything about the world's name. Blaming a
+                # nested failure on it sent me hunting for a misnamed world when the
+                # walker was the thing at fault.
+                if is_root:
+                    raise packmeta.PackError(
+                        "cannot list %s on the server: %s\n"
+                        "    Is the world folder named %r? Check the panel's file"
+                        " manager." % (remote_dir, exc, world))
                 raise packmeta.PackError(
-                    "cannot list %s on the server: %s\n"
-                    "    Is the world folder named %r? Check the panel's file manager."
-                    % (remote_dir, exc, world))
-            for entry in entries:
-                name = entry.rsplit("/", 1)[-1]
-                if name in (".", ".."):
-                    continue
+                    "cannot list %s on the server: %s" % (remote_dir, exc))
+            for name, is_dir, size in entries:
                 remote = remote_dir + "/" + name
-                # No reliable "is this a directory" in FTP. SIZE succeeds on files and
-                # fails on directories, which is the cheapest usable test.
-                try:
-                    size = session.size(remote)
-                except ftplib.all_errors:
-                    size = None
-                if size is None:
+                if is_dir:
                     walk(remote, local_dir / name)
                     continue
                 local_dir.mkdir(parents=True, exist_ok=True)
                 out = local_dir / name
-                with out.open("wb") as fh:
-                    session.retrbinary("RETR " + remote, fh.write, blocksize=1 << 18)
-                got = out.stat().st_size
-                if got != size:
+                # A size mismatch means one of two different things and they need
+                # different answers. A truncated transfer should be retried; a file the
+                # server is actively rewriting - level.dat is re-saved every few minutes
+                # and its gzipped size shifts by a few bytes - will never match the size
+                # we listed it with. Re-read the size and try again, so a moving file
+                # settles instead of being called corruption.
+                for attempt in range(3):
+                    with out.open("wb") as fh:
+                        session.retrbinary("RETR " + remote, fh.write,
+                                           blocksize=1 << 18)
+                    got = out.stat().st_size
+                    if got == size:
+                        break
+                    try:
+                        size = session.size(remote)
+                    except ftplib.all_errors:
+                        pass
+                else:
                     raise packmeta.PackError(
-                        "truncated download: %s is %d bytes on the server and %d here.\n"
-                        "    A partial world is not a backup. Re-run." % (remote, size, got))
+                        "%s keeps changing size while being copied (server says %d,"
+                        " got %d).\n"
+                        "    Three attempts. Something is writing to the world, which"
+                        " almost\n    always means the server is still up. Stop it and"
+                        " re-run." % (remote, size, got))
                 count += 1
                 total += got
                 if count % 50 == 0:
                     print("  %5d files  %.1f MB" % (count, total / 1048576))
 
         root = (cfg["root"] + "/" + world) if cfg["root"] else world
-        walk(root, target)
+        walk(root, target, is_root=True)
     finally:
         try:
             session.quit()
@@ -488,6 +591,8 @@ def main():
     p = sub.add_parser("backup-world", help="download the world before a deploy")
     p.add_argument("--world", default=None, help="world folder name on the server")
     p.add_argument("--into", default=None, help="local directory to write under")
+    p.add_argument("--allow-running", action="store_true",
+                   help="copy even though the server is up (the copy may be torn)")
     p.set_defaults(func=cmd_backup_world)
 
     args = parser.parse_args()
