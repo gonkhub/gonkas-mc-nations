@@ -30,6 +30,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
   in. Hover over land to see the region's ores and mobs; abundant ones have a green frame.
 - You can found more than one colony. Placing a second Town Hall no longer asks you to
   abandon or delete the first.
+- Boats, airships and carts can carry trade. Build any vehicle (Create Aeronautics or
+  Offroad) with a chest or barrel aboard and stop it near two colonies' Caravan Stations:
+  those colonies become linked by ship, cart or airship, and from the next trip on, goods
+  sold between them load into the vehicle at one station and unload at the other. Name the
+  vehicle with a nameplate and the station tab shows it by name.
 
 
 ## 0.2.4 - 2026-11-22
