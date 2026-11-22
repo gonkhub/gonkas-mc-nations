@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.2.4 - 2026-11-22
+
 - Colonies in the same nation trade for free. When a colony needs something, or its
   Caravan Station is below its minimum stock, another colony of the nation sends it at no
   charge: no price and no freight, so the receiving colony needs no money. The caravan still
