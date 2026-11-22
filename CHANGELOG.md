@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.2.2 - 2026-11-22
+
 - The Caravan Station now does its job. Before, it almost never asked Couriers for the
   goods you set it to keep, so nothing reached it and nothing shipped.
 - New export screen: press **Manage exports** on the Caravan Station's tab, put an item in
