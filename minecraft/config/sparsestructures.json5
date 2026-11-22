@@ -21,6 +21,13 @@
       "structure": "minecraft:mansion",
       "factor": 2
     },
+    // Gonka's MC Nations: vanilla villages are gutted. Minecolonies colonies are the only
+    // towns in this pack. A factor of 0 disables the whole minecraft:villages structure set
+    // (plains, desert, savanna, taiga, snowy). Only affects chunks generated from now on.
+    {
+      "structure": "minecraft:villages",
+      "factor": 0
+    },
     // add the structures you want to modify in the format:
     // (don't forget to remove "//", and use dots for decimal numbers)
     //
