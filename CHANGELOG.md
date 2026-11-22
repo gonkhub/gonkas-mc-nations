@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.2.0 - 2026-11-22
+
 - New world generation (Continents and Cascades): land comes in large continents separated
   by wide oceans, with reshaped terrain. Only newly generated land is affected.
 - Vassalage is replaced by colony membership. A nation now invites colonies directly
