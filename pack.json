@@ -1,7 +1,7 @@
 {
   "name": "Gonka's MC Nations",
   "slug": "GonkasMCNations",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "minecraft": "1.21.1",
   "neoforge": "21.1.265",
   "github": "gonkhub/gonkas-mc-nations",

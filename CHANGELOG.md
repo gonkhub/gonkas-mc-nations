@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.1.5 - 2026-11-22
+
 - Browsing to the Caravan Station in the build tool no longer crashes the game.
 - The Caravan Station is now listed under Infrastructure in whatever building style you
   have selected, so there is no need to switch style packs to find or place one.
