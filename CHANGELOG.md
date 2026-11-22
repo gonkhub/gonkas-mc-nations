@@ -17,7 +17,8 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Chopped trees now fall over instead of hanging in the air. A felled trunk lies where it
+  lands, can be pushed, and hurts a little if it falls on you. Only an axe topples a tree.
 
 
 ## 0.2.4 - 2026-11-22
