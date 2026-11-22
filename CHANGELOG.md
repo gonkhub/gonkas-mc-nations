@@ -37,6 +37,15 @@ record lives in `docs/`, which deliberately stays out of this repo.
   buildings can do it.
 - Dropped leftover compatibility patches for Apokinetics, which this pack no longer
   includes. They did nothing, and one of them reported a failure on every server start.
+- Vanilla villages no longer generate, and wandering traders and zombie villagers are gone.
+  Villagers themselves stay, for Create: Thaumaturgy's Arcane Engineers.
+- Food prices at a colony now rise when its citizens are going hungry, read from the
+  colonists themselves rather than from what the caravan station holds. A well-fed colony
+  no longer pays famine prices.
+- Courier packages are removed. They could be claimed but never delivered.
+- A caravan station no longer makes its own colony import the goods it was set to export.
+- The Sculk can now invade a colony that is not part of a nation.
+- Messages no longer tell you to run `/settlement` commands that do not exist.
 
 
 ## 0.1.5 - 2026-11-22
