@@ -20,6 +20,14 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.1.4 - 2026-11-21
+
+- A newly found Ancient City can now be woken. Killing things beside one feeds it;
+  before this a fresh city ignored everything you did to it.
+- The sculk now turns ground at the scale its territory claims, growing outward in
+  real sculk fields instead of a few patches around catalysts.
+
+
 ## 0.1.3 - 2026-11-21
 
 - Each Ancient City now has its own pool of points it spends to spread and to send
