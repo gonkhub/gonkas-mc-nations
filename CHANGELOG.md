@@ -17,6 +17,8 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- New world generation (Continents and Cascades): land comes in large continents separated
+  by wide oceans, with reshaped terrain. Only newly generated land is affected.
 - Vassalage is replaced by colony membership. A nation now invites colonies directly
   (`/nation invite <nation> <colony>`), or a colony asks to join (`/nation join <colony>
   <nation>`), and the other side answers with `/nation accept`. Inviting a colony no longer
@@ -33,7 +35,7 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - Setting what a station trades no longer needs a command or operator rights: hold an
   item, open the station and press Keep. Anyone with permission to manage the colony's
   buildings can do it.
-- Dropped leftover compatibility patches for Apokinetics, which this pack no longer
+- Dropped leftover compatibility patches for Apokinetics, which this pack no longer
   includes. They did nothing, and one of them reported a failure on every server start.
 
 
