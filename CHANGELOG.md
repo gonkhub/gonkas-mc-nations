@@ -17,7 +17,8 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Dropped leftover compatibility patches for Apokinetics, which this pack no longer
+  includes. They did nothing, and one of them reported a failure on every server start.
 
 
 ## 0.1.5 - 2026-11-22
