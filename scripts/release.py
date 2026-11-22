@@ -491,6 +491,19 @@ def cmd_deploy(args):
     python_script("deploy-ftp.py", "upload", str(package))
 
     print()
+    print("-- remove what is now stale")
+    # BEFORE verify, not after. A stale jar is a crash on start, and this is the only
+    # step whose omission is silent: `verify` checks that expected files are PRESENT,
+    # never that unexpected ones are absent, so a forgotten delete passes every check
+    # and then fails at boot with a duplicate mod id.
+    #
+    # It used to be printed as a manual step at the end, which meant the default outcome
+    # of forgetting a chore was a crash loop. `deploy-ftp.py delete` can only act on the
+    # package's own DELETE-ON-SERVER.txt and refuses anything outside mods/, config/,
+    # kubejs/ and defaultconfigs/ - so no world, no backups, no server state.
+    python_script("deploy-ftp.py", "delete", str(package))
+
+    print()
     print("-- verify what landed")
     python_script("deploy-ftp.py", "verify", str(package))
 
@@ -507,10 +520,9 @@ def cmd_deploy(args):
 
     print()
     print("MANUAL, in this order:")
-    print("  1. If DELETE-ON-SERVER.txt was printed above, delete those files by hand.")
-    print("  2. Start the server from the panel.")
-    print("  3. Watch the console for:  Done (    [thee]    and no duplicate mod id")
-    print("  4. Smoke test, before players join:")
+    print("  1. Start the server from the panel.")
+    print("  2. Watch the console for:  Done (    [thee]    and no duplicate mod id")
+    print("  3. Smoke test, before players join:")
     print("         /sculk list        expect a node list, or none on a fresh world")
     print("         /theetest all      expect 13 passed, 0 FAILED, 1 skipped or better")
     return 0

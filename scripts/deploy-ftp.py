@@ -4,6 +4,7 @@
     python scripts/deploy-ftp.py test
     python scripts/deploy-ftp.py upload ../gonkas-server-upload-delta
     python scripts/deploy-ftp.py verify ../gonkas-server-upload
+    python scripts/deploy-ftp.py delete ../gonkas-server-upload-delta
     python scripts/deploy-ftp.py backup-world
 
 WHERE THE PASSWORD LIVES
@@ -487,6 +488,94 @@ SERVER_STATE = [
 ]
 
 
+# Deleting is the one thing this script used to refuse.
+#
+# The refusal was "too destructive to drive from a path list", and every deploy ended
+# with a manual step: read DELETE-ON-SERVER.txt, open an FTP client, delete those paths
+# by hand. Skipping it leaves two jars claiming one mod id, which is a hard crash on
+# start - so the safety measure's actual effect was to make a crash the default outcome
+# of forgetting a chore.
+#
+# WHAT MAKES THIS SAFE IS THE SOURCE OF THE LIST, not the act. The paths come only from
+# a package's own DELETE-ON-SERVER.txt, which build-server-package.py computes as "was
+# in the previous upload, is gone from this one". It cannot be handed arbitrary paths,
+# and the guards below refuse anything that is not a plain file under a known deployable
+# directory - so no world, no backup, no server state, nothing outside the pack.
+#
+# Everything it does is printed. Nothing recurses.
+
+# Only these. `world`, `logs`, `backups` and the server-owned state files are absent on
+# purpose and must stay absent: the world has no local copy (DELETE-FIRST.txt warns
+# about `lookscanbethisevening` specifically), and ops/bans/whitelist exist nowhere else.
+DELETABLE_ROOTS = ("mods/", "config/", "kubejs/", "defaultconfigs/")
+
+
+def deletable(rel):
+    """Whether a path from DELETE-ON-SERVER.txt may be deleted."""
+    rel = rel.strip().replace("\\", "/")
+    if not rel or rel.startswith("#"):
+        return False, "blank or comment"
+    if rel.startswith("/") or ".." in rel.split("/"):
+        return False, "absolute or escaping path"
+    if rel.endswith("/"):
+        return False, "directory - this never removes directories"
+    if not any(rel.startswith(root) for root in DELETABLE_ROOTS):
+        return False, "outside %s" % ", ".join(DELETABLE_ROOTS)
+    return True, ""
+
+
+def cmd_delete(args):
+    package = pathlib.Path(args.package)
+    listing = package / "DELETE-ON-SERVER.txt"
+    if not listing.is_file():
+        print("no DELETE-ON-SERVER.txt in %s - nothing is stale" % package)
+        return 0
+
+    wanted = []
+    for line in listing.read_text(encoding="utf-8").splitlines():
+        ok, why = deletable(line)
+        rel = line.strip().replace("\\", "/")
+        if ok:
+            wanted.append(rel)
+        elif rel and not rel.startswith("#"):
+            print("REFUSED  %s  (%s)" % (rel, why))
+    if not wanted:
+        print("nothing to delete")
+        return 0
+
+    print("stale on the server, from %s:" % listing.name)
+    for rel in wanted:
+        print("    %s" % rel)
+    print()
+
+    cfg = ftp_config()
+    session = connect(cfg)
+    gone = 0
+    absent = 0
+    failed = 0
+    try:
+        for rel in wanted:
+            try:
+                session.delete(rel)
+                gone += 1
+                print("deleted    %s" % rel)
+            except ftplib.error_perm as exc:
+                # 550 is "no such file", which is the expected answer when a previous
+                # run already removed it. Not a failure; the end state is what matters.
+                if str(exc).startswith("550"):
+                    absent += 1
+                    print("already gone  %s" % rel)
+                else:
+                    failed += 1
+                    print("FAILED     %s  %s" % (rel, exc))
+    finally:
+        session.quit()
+
+    print()
+    print("deleted %d, already gone %d, failed %d" % (gone, absent, failed))
+    return 1 if failed else 0
+
+
 def cmd_backup_state(args):
     """Copy the handful of server-owned files that exist nowhere else."""
     cfg = ftp_config()
@@ -640,6 +729,11 @@ def main():
     p.add_argument("--allow-running", action="store_true",
                    help="copy even though the server is up (the copy may be torn)")
     p.set_defaults(func=cmd_backup_world)
+
+    p = sub.add_parser("delete",
+                       help="remove the stale files a package's DELETE-ON-SERVER.txt lists")
+    p.add_argument("package", help="the built server package directory")
+    p.set_defaults(func=cmd_delete)
 
     p = sub.add_parser("backup-state",
                        help="copy the small server-owned files (ops, bans, properties)")
