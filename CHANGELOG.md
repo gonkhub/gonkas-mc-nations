@@ -17,7 +17,7 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Opening the Caravan Station's tab no longer crashes the game.
 
 
 ## 0.2.0 - 2026-11-22
