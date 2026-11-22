@@ -51,6 +51,8 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - A caravan station no longer makes its own colony import the goods it was set to export.
 - The Sculk can now invade a colony that is not part of a nation.
 - Messages no longer tell you to run `/settlement` commands that do not exist.
+- Fixed a crash on the first start of a new world, when a structure near spawn spawned
+  mobs before Mob Champions was ready.
 
 
 ## 0.1.5 - 2026-11-22
