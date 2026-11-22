@@ -17,6 +17,22 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- Vassalage is replaced by colony membership. A nation now invites colonies directly
+  (`/nation invite <nation> <colony>`), or a colony asks to join (`/nation join <colony>
+  <nation>`), and the other side answers with `/nation accept`. Inviting a colony no longer
+  fails with "no nation with that name". Colonies can leave at any time; a capital has to
+  dissolve its nation before joining another. Old vassal links are dropped, so former
+  vassal nations start out independent.
+- A nation's founder can draw its territory on Xaero's World Map with
+  `/nation border draw <nation>`: drag a loop around your colonies and press Enter. It
+  shows as a dashed outline around the colonies' own borders, and nations that have not
+  drawn one get an automatic outline.
+- The Caravan Station now has its own screen. Open the hut to see what it is holding, set
+  how much of each good it keeps ready to ship, and watch caravans coming and going with
+  the time until they arrive.
+- Setting what a station trades no longer needs a command or operator rights: hold an
+  item, open the station and press Keep. Anyone with permission to manage the colony's
+  buildings can do it.
 - Dropped leftover compatibility patches for Apokinetics, which this pack no longer
   includes. They did nothing, and one of them reported a failure on every server start.
 
