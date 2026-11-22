@@ -164,9 +164,9 @@ def cmd_bump(args):
     print("  instance.cfg    ExportVersion")
     print("  CHANGELOG.md    Unreleased closed as %s, new Unreleased opened" % new)
     print()
-    print("Write the changelog entry for %s before releasing - `publish` uses it as the"
+    print("Write the changelog entry for %s before releasing - it is not published,"
           % new)
-    print("GitHub release notes, and an empty entry ships as the release description.")
+    print("but it is the only record of what this version changed and `publish` requires it.")
     return 0
 
 
@@ -534,12 +534,16 @@ def cmd_publish(args):
     if not repo:
         raise packmeta.PackError("pack.json has no `github` field (owner/name)")
 
+    # STILL REQUIRED, though it no longer reaches GitHub. The release body is blank by
+    # rule (see below), so this is purely the repo's own record of what each version
+    # changed - which is the thing a rollback is chosen from. An unwritten entry means
+    # nobody can tell later what 0.1.4 was.
     notes = changelog_section(version)
     if not notes or "_nothing yet_" in notes:
         raise packmeta.PackError(
             "CHANGELOG.md has no written entry for %s.\n"
-            "    The entry is the release notes; publishing without one ships a release\n"
-            "    whose description is empty or a placeholder. Write it, then re-run."
+            "    It is not published anywhere - release bodies are blank - but it is the\n"
+            "    only record of what this version changed. Write it, then re-run."
             % version)
 
     remotes = packmeta.git("remote", check=False)
@@ -562,24 +566,22 @@ def cmd_publish(args):
     run(["git", "push", "origin", "HEAD"])
     run(["git", "push", "origin", tag])
 
-    # THE RELEASE BODY IS THE CHANGELOG ENTRY AND NOTHING ELSE.
+    # THE RELEASE BODY IS EMPTY. NOT SHORT - EMPTY.
     #
-    # This used to append a footer - download name and size, Prism import instructions,
-    # Minecraft and NeoForge versions, the sha1 - and before that the changelog entries
-    # themselves were written as prose about what the pack is. 0.0.1 shipped a page of it,
-    # including a section headed "carried over from The Factory Must Gonk", which is the
-    # name of a different instance that exists only on the author's machine. Nobody
-    # downloading a zip can act on that.
+    # This has walked back twice, and the end point is worth stating so it does not walk
+    # forward again. It began as prose about what the pack is: 0.0.1 shipped a page of it,
+    # including a section headed "carried over from The Factory Must Gonk", the name of a
+    # different instance that exists only on the author's machine. That was cut to the
+    # changelog entry and a footer; then to the changelog entry alone; now to nothing
+    # (user's call, 2026-11-21).
     #
-    # None of the footer is lost. GitHub prints the asset name and size under every
-    # release, the sha1 ships beside the zip as its own asset, and the import instructions
-    # travel INSIDE the zip as HOW-TO-JOIN.txt, which is where somebody who has already
-    # downloaded it will actually look.
+    # Nothing is lost by it. A release page is a download: GitHub prints the asset name,
+    # size and date itself, the sha1 ships beside the zip as its own asset, and the join
+    # instructions travel INSIDE the zip as HOW-TO-JOIN.txt - which is where somebody who
+    # has already downloaded it will actually look.
     #
-    # So: write the entry, verbatim, and add nothing. If a release needs explaining beyond
-    # its changelog, the fix is a better changelog entry.
-    notes_file = DIST / ("release-notes-%s.md" % version)
-    notes_file.write_text(notes + "\n", encoding="utf-8")
+    # `--notes ""` is passed explicitly rather than omitted, because `gh release create`
+    # with no notes flag at all opens an EDITOR, which hangs a scripted release forever.
 
     sha_path = DIST / (zip_path.name + ".sha1")
     assets = [str(zip_path)]
@@ -597,7 +599,7 @@ def cmd_publish(args):
     run(["gh", "release", "create", tag,
          "--repo", repo,
          "--title", "%s %s" % (meta["name"], version),
-         "--notes-file", str(notes_file)] + assets)
+         "--notes", ""] + assets)
 
     # main tracks what players actually have. Work lands on dev; main moves only here,
     # once a release exists, so "what is on main" and "what someone could have downloaded"

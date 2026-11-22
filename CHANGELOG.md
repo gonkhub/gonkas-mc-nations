@@ -2,10 +2,12 @@
 
 Player-facing changes to Gonka's MC Nations, newest first.
 
-Each released heading is a git tag and a GitHub release, and the body of that heading is
-what the release notes say — `scripts/release.py publish` reads this file and refuses to
-publish a version whose section is empty or still a placeholder. Write under
-**Unreleased** as you work; `scripts/release.py bump` dates it and opens a fresh one.
+Each released heading is a git tag and a GitHub release. **This file is not published**
+— release bodies on GitHub are deliberately empty — so this is the only record of what
+each version changed, and it is what a rollback gets chosen from. `scripts/release.py
+publish` still refuses a version whose section is empty or a placeholder, for that
+reason. Write under **Unreleased** as you work; `scripts/release.py bump` dates it and
+opens a fresh one.
 
 Keep entries in players' terms. "Vassalage now requires a road between the two seats" is
 an entry; "re-pointed `ColonyBridge` at the resolver queues" is not. The engineering
