@@ -17,7 +17,20 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- The Caravan Station now does its job. Before, it almost never asked Couriers for the
+  goods you set it to keep, so nothing reached it and nothing shipped.
+- New export screen: press **Manage exports** on the Caravan Station's tab, put an item in
+  the slot (your item is not taken), type how many to keep ready, and press Set. The tab
+  itself now shows what is kept, what is held, and what is on the road.
+- Colonies trade what they need. If your Builder is short of stone bricks and a colony
+  you are linked to by road or rail is exporting them, a caravan is sent once your
+  colony can pay for the goods and the freight. Small orders are filled too.
+- A colony no longer orders the same goods twice while a delivery is still being carried
+  into its Warehouse, and no longer re-sells goods it just imported.
+- Caravans waiting to leave are shown on the station tab with how much food they still
+  need. A station that exports should keep some food (bread, for example) for the road.
+- Trade can travel by Create train: a colony with a train station beside its Caravan
+  Station can send and receive goods on a shared rail network.
 
 
 ## 0.2.1 - 2026-11-22
