@@ -21,6 +21,15 @@ record lives in `docs/`, which deliberately stays out of this repo.
   lands, can be pushed, and hurts a little if it falls on you. Only an axe topples a tree.
 - Silent Gear: tools and armour are built from parts you choose, and upgraded with more
   parts rather than thrown away and recrafted.
+- **New world.** Every continent is named, separated from the next by open ocean, and split
+  into three or four regions. Each region has one kind of country and its own ores and
+  mobs: one might have only copper, diamonds and lapis, another iron, gold and emeralds.
+  Some ores and mobs are abundant in a region. Large copper and iron veins no longer
+  generate. `/atlas here` tells you what the region you stand in holds.
+- On Xaero's World Map, continent names show when zoomed out and region names when zoomed
+  in. Hover over land to see the region's ores and mobs; abundant ones have a green frame.
+- You can found more than one colony. Placing a second Town Hall no longer asks you to
+  abandon or delete the first.
 
 
 ## 0.2.4 - 2026-11-22
