@@ -18,6 +18,16 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.1.3 - 2026-11-21
+
+- Each Ancient City now has its own pool of points it spends to spread and to send
+  invasions. A city nobody bothers earns almost nothing and can never afford a wave.
+- Cutting a city's sculk back now feeds it. Clearing a hotspot is a commitment: get in
+  and kill the Heart, or leave it angrier than you found it.
+- `/sculk pressure` shows each city's balance, its income and what an invasion costs.
+- Roads between connected colonies are drawn on the web map, following the signs.
+
+
 ## 0.1.2 - 2026-11-21
 
 - Sculk mobs now hunt animals, so the sculk grows where there is life to kill.
