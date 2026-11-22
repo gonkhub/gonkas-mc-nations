@@ -17,7 +17,23 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Colonies in the same nation trade for free. When a colony needs something, or its
+  Caravan Station is below its minimum stock, another colony of the nation sends it at no
+  charge: no price and no freight, so the receiving colony needs no money. The caravan still
+  packs food for the road and travels as long as any other, but it sets off as soon as the
+  goods are ready instead of waiting for the next trade round. If the sending colony's
+  station holds none, it fetches them from its own Warehouse first.
+- A Caravan Station now looks at everything its colony is waiting on, not only builder
+  materials: upgrades, crafters' ingredients, food, fuel, tools, and items a citizen's quest
+  asks for. Requests that any of several items can fill (any food, any planks) are filled
+  with whatever a seller has. Research is not included: its cost comes from your own
+  inventory when you start it.
+- The Caravan Station's tab is now **Minimum Stock**, the same list craftsman huts have:
+  press Add, search for an item, type how many to keep, and press Done. X removes a line.
+  The old export screen is gone.
+- New **Trade Stats** tab on the Caravan Station: every item the colony has sent and
+  received, spurs earned, spent and net, and caravans departed and received. It counts from
+  this update on.
 
 
 ## 0.2.3 - 2026-11-22
