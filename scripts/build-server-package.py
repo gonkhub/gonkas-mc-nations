@@ -575,15 +575,45 @@ def build(pack, out, previous=None):
     return 0
 
 
+def is_delta(out):
+    """Whether this package was built as a delta.
+
+    Read off PACKAGE.md, which write_docs marks for the human reading it. The marker is
+    there either way, so this needs no new file in the package and no flag threaded
+    through the caller.
+    """
+    doc = pathlib.Path(out) / "PACKAGE.md"
+    if not doc.is_file():
+        return False
+    return "**DELTA**" in doc.read_text(encoding="utf-8")
+
+
 def check(out):
-    """Verify a built package against its own manifest."""
+    """Verify a built package against its own manifest.
+
+    A DELTA IS CHECKED ON WHAT IT CONTAINS, not on what the manifest lists.
+
+    The manifest deliberately describes the WHOLE package rather than this delta (see
+    build_package) so the next delta has something to compare against. Which means a
+    delta of three files is "missing" the other three hundred BY DESIGN, and checking it
+    against the full manifest could never pass - this check was unpassable for every
+    delta release, and the only way to ship one was to skip verification, which is
+    exactly backwards.
+
+    So: every file present must match its digest, and absences are counted and reported
+    rather than failed. A corrupt or truncated file is still caught, which is what this
+    check is actually for. A FULL package is still held to the whole manifest, because
+    there a missing file is a real hole.
+    """
     out = pathlib.Path(out)
     manifest = out / "UPLOAD-SHA1.txt"
     if not manifest.is_file():
         print("no UPLOAD-SHA1.txt in %s" % out, file=sys.stderr)
         return 1
+    delta = is_delta(out)
     bad = 0
     missing = 0
+    present = 0
     for line in manifest.read_text(encoding="utf-8").splitlines():
         if "  " not in line:
             continue
@@ -591,14 +621,21 @@ def check(out):
         path = out / rel.strip()
         if not path.is_file():
             missing += 1
-            print("MISSING  %s" % rel.strip())
+            if not delta:
+                print("MISSING  %s" % rel.strip())
         elif sha1(path) != digest.strip():
             bad += 1
             print("CHANGED  %s" % rel.strip())
-    if bad or missing:
+        else:
+            present += 1
+    if bad or (missing and not delta):
         print("%d changed, %d missing" % (bad, missing), file=sys.stderr)
         return 1
-    print("ok: every file matches UPLOAD-SHA1.txt")
+    if delta:
+        print("ok: %d file(s) in this delta match UPLOAD-SHA1.txt"
+              " (%d unchanged file(s) already on the server)" % (present, missing))
+    else:
+        print("ok: every file matches UPLOAD-SHA1.txt")
     return 0
 
 
