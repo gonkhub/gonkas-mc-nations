@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.2.3 - 2026-11-22
+
 - The Caravan Station tab no longer cuts the last digit off an export target: a target
   of 256 showed as "0/25".
 
