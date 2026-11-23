@@ -17,18 +17,33 @@
 [ores]
 	#One ore per entry: name=icon item=placed feature,placed feature,...
 	#The placed features are the ones the region roll switches on, off, or multiplies.
-	#Ores not listed here (zinc, modded ores) generate as normal everywhere.
+	#Ores not listed here generate as normal everywhere.
 	definitions = ["coal=minecraft:coal=minecraft:ore_coal_upper,minecraft:ore_coal_lower", "copper=minecraft:raw_copper=minecraft:ore_copper,minecraft:ore_copper_large", "iron=minecraft:raw_iron=minecraft:ore_iron_upper,minecraft:ore_iron_middle,minecraft:ore_iron_small", "gold=minecraft:raw_gold=minecraft:ore_gold,minecraft:ore_gold_lower,minecraft:ore_gold_extra", "lapis=minecraft:lapis_lazuli=minecraft:ore_lapis,minecraft:ore_lapis_buried", "redstone=minecraft:redstone=minecraft:ore_redstone,minecraft:ore_redstone_lower", "diamond=minecraft:diamond=minecraft:ore_diamond,minecraft:ore_diamond_medium,minecraft:ore_diamond_large,minecraft:ore_diamond_buried", "emerald=minecraft:emerald=atlas:ore_emerald", "zinc=create:raw_zinc=create:zinc_ore", "lead=tfmg:raw_lead=tfmg:lead_ore", "nickel=tfmg:raw_nickel=tfmg:nickel_ore", "lithium=tfmg:raw_lithium=tfmg:lithium_ore", "bort=silentgear:bort=silentgear:bort_ore", "cinnabar=thaumaturge:raw_cinnabar=thaumaturge:ore_cinnabar", "amber=thaumaturge:amber=thaumaturge:ore_amber", "arcane_quartz=thaumaturge:ore_quartz=thaumaturge:ore_quartz"]
 	#Tier 1 ores. A region takes 0 to 2 of these.
 	tier1 = ["coal", "copper", "iron", "gold"]
 	#Tier 2 ores. A region takes 0 to 2 of these.
 	tier2 = ["lapis", "redstone", "diamond", "emerald"]
+	#Modded ores. Rolled separately from the two tiers above, on a random stream of
+	#its own, so adding or removing one never changes a region's vanilla ore or mob
+	#roll. A region takes extraMin to extraMax of these.
+	extra = ["zinc", "lead", "nickel", "lithium", "bort", "cinnabar", "amber", "arcane_quartz"]
+	# Default: 1
+	# Range: 0 ~ 10
+	extraMin = 1
+	# Default: 2
+	# Range: 0 ~ 10
+	extraMax = 2
+	#How many times over an ore a region rolled generates. Above 1 because a region
+	#only has a few ores, and at vanilla rates its caves look empty.
+	# Default: 2
+	# Range: 1 ~ 10
+	rolledMultiplier = 2
 	#Chance each rolled ore comes up abundant.
 	# Default: 0.15
 	# Range: 0.0 ~ 1.0
 	abundantChance = 0.15
 	#How many times over an abundant ore generates.
-	# Default: 3
+	# Default: 5
 	# Range: 1 ~ 10
 	abundantMultiplier = 5
 	#Chance that an ore a region did NOT roll still places on a given chunk. 0 means
@@ -37,6 +52,15 @@
 	# Default: 0.0
 	# Range: 0.0 ~ 1.0
 	absentChance = 0.0
+
+[stone]
+	#Each region replaces the overworld's plain stone with one stone type it rolls.
+	#Only affects chunks generated afterwards. Deepslate is left alone.
+	enabled = true
+	#Stone pool: block,weight[,tag...]. Tags as for mobs: hot, cold, temperate, dry,
+	#wet. Blocks that do not exist (mod not installed) are skipped. minecraft:stone
+	#is a valid entry and means the region keeps plain stone.
+	pool = ["minecraft:stone,2", "minecraft:granite,3", "minecraft:diorite,3", "minecraft:andesite,3", "minecraft:tuff,2", "minecraft:calcite,1", "create:limestone,2", "create:scoria,1,hot", "create:scorchia,1,hot,dry", "create:asurine,1", "create:crimsite,1", "create:ochrum,1,dry", "create:veridium,1,wet", "quark:jasper,2,hot", "quark:shale,2", "quark:limestone,2", "quark:permafrost,2,cold"]
 
 [mobs]
 	#Monster pool: entity,weight,minGroup,maxGroup[,tag...]. Tags limit where a mob
