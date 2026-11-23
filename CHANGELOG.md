@@ -20,6 +20,15 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.5.0 - 2026-11-22
+
+- New block: the **Map Table** (cartography table + compass + map, shapeless). It holds a
+  shared Xaero's World Map. "Upload my map" adds the area you have explored to the table;
+  "Download to my map" fills in only the parts of the table's map you have never explored
+  yourself, so your own map is never overwritten. The download is applied when you leave
+  the world. Breaking and re-placing the table keeps its map.
+
+
 ## 0.4.0 - 2026-11-22
 
 - Every region now has its own stone. Underground, plain stone is replaced by the stone the
