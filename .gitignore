@@ -117,6 +117,7 @@
 !/minecraft/mods/chaosgate-*.jar
 !/minecraft/mods/omnifix-*.jar
 !/minecraft/mods/atlas-*.jar
+!/minecraft/mods/maptable-*.jar
 
 # third-party, hand-installed (no packwiz index entry)
 !/minecraft/mods/kubejs-neoforge-*.jar
