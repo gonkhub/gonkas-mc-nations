@@ -1,14 +1,14 @@
 #treephysics.config.despawn_time.tooltip
 # Default: 144000
 # Range: > -1
-despawn_time = 144000
+despawn_time = 600
 #treephysics.config.small_tree_maximum.tooltip
 # Default: 5
 # Range: > 1
 small_tree_maximum = 5
 #treephysics.config.despawn_behavior.tooltip
 #Allowed Values: NO_DESPAWN, DESPAWN_SMALL, DESPAWN_ALL
-despawn_behavior = "DESPAWN_SMALL"
+despawn_behavior = "DESPAWN_ALL"
 #treephysics.config.drop_items_on_despawn.tooltip
 drop_items_on_despawn = true
 #treephysics.config.rooted_dirt_generation.tooltip
