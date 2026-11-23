@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.3.0 - 2026-11-22
+
 - **New world.** Every continent is named, separated from the next by open ocean, and split
   into three or four regions. Each region has one kind of country and its own ores and
   mobs: one might have only copper, diamonds and lapis, another iron, gold and emeralds.
