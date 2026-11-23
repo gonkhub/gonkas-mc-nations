@@ -18,7 +18,7 @@
 	#One ore per entry: name=icon item=placed feature,placed feature,...
 	#The placed features are the ones the region roll switches on, off, or multiplies.
 	#Ores not listed here (zinc, modded ores) generate as normal everywhere.
-	definitions = ["coal=minecraft:coal=minecraft:ore_coal_upper,minecraft:ore_coal_lower", "copper=minecraft:raw_copper=minecraft:ore_copper,minecraft:ore_copper_large", "iron=minecraft:raw_iron=minecraft:ore_iron_upper,minecraft:ore_iron_middle,minecraft:ore_iron_small", "gold=minecraft:raw_gold=minecraft:ore_gold,minecraft:ore_gold_lower,minecraft:ore_gold_extra", "lapis=minecraft:lapis_lazuli=minecraft:ore_lapis,minecraft:ore_lapis_buried", "redstone=minecraft:redstone=minecraft:ore_redstone,minecraft:ore_redstone_lower", "diamond=minecraft:diamond=minecraft:ore_diamond,minecraft:ore_diamond_medium,minecraft:ore_diamond_large,minecraft:ore_diamond_buried", "emerald=minecraft:emerald=atlas:ore_emerald"]
+	definitions = ["coal=minecraft:coal=minecraft:ore_coal_upper,minecraft:ore_coal_lower", "copper=minecraft:raw_copper=minecraft:ore_copper,minecraft:ore_copper_large", "iron=minecraft:raw_iron=minecraft:ore_iron_upper,minecraft:ore_iron_middle,minecraft:ore_iron_small", "gold=minecraft:raw_gold=minecraft:ore_gold,minecraft:ore_gold_lower,minecraft:ore_gold_extra", "lapis=minecraft:lapis_lazuli=minecraft:ore_lapis,minecraft:ore_lapis_buried", "redstone=minecraft:redstone=minecraft:ore_redstone,minecraft:ore_redstone_lower", "diamond=minecraft:diamond=minecraft:ore_diamond,minecraft:ore_diamond_medium,minecraft:ore_diamond_large,minecraft:ore_diamond_buried", "emerald=minecraft:emerald=atlas:ore_emerald", "zinc=create:raw_zinc=create:zinc_ore", "lead=tfmg:raw_lead=tfmg:lead_ore", "nickel=tfmg:raw_nickel=tfmg:nickel_ore", "lithium=tfmg:raw_lithium=tfmg:lithium_ore", "bort=silentgear:bort=silentgear:bort_ore", "cinnabar=thaumaturge:raw_cinnabar=thaumaturge:ore_cinnabar", "amber=thaumaturge:amber=thaumaturge:ore_amber", "arcane_quartz=thaumaturge:ore_quartz=thaumaturge:ore_quartz"]
 	#Tier 1 ores. A region takes 0 to 2 of these.
 	tier1 = ["coal", "copper", "iron", "gold"]
 	#Tier 2 ores. A region takes 0 to 2 of these.
@@ -30,7 +30,7 @@
 	#How many times over an abundant ore generates.
 	# Default: 3
 	# Range: 1 ~ 10
-	abundantMultiplier = 3
+	abundantMultiplier = 5
 	#Chance that an ore a region did NOT roll still places on a given chunk. 0 means
 	#it is simply not there. Iron stays obtainable everywhere through Create washing
 	#and the Minecolonies sifter.

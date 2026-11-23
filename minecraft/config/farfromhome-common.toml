@@ -72,7 +72,7 @@
 	#Distance in chunks defining spawn penalty zone (default: 312 = ~5000 blocks). Within this zone: diamonds 99% fail, other ores 25% fail. Rates scale to 0% at this distance.
 	# Default: 312
 	# Range: 0 ~ 1000000
-	diamondSpawnDistance = 312
+	diamondSpawnDistance = 0
 
 ["Daytime Hostiles"]
 	#Enable hostile mobs during daytime at extreme distances

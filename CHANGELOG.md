@@ -17,7 +17,20 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Every region now has its own stone. Underground, plain stone is replaced by the stone the
+  region rolled: granite, diorite, andesite, tuff, calcite, Create's limestone, scoria,
+  scorchia, asurine, crimsite, ochrum or veridium, or Quark's jasper, shale, limestone or
+  permafrost. Hot, cold, dry and wet regions favour different stones. `/atlas here` and the
+  map's hover card show it. Any of these stones works for stone tools and furnaces.
+- Modded ores are now regional too. Each region also gets one or two of zinc, lead, nickel,
+  lithium, bort, cinnabar, amber and arcane quartz; the rest do not generate there.
+- The ores a region does have are far more common: twice the usual amount, and five times
+  where they are abundant.
+- Mining near spawn no longer randomly destroys ore. Ore drops still grow the further from
+  spawn you mine.
+- L_Ender's Cataclysm is back: its bosses, dungeons and gear.
+- Stone and ore changes only apply to land generated from now on; ground already explored
+  keeps what it has.
 
 
 ## 0.3.0 - 2026-11-22
