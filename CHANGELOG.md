@@ -17,7 +17,16 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Every region now rolls its own **wild plants** (Farmer's Delight wild crops, pumpkins,
+  melons, sweet berries, bamboo, flax, fluffy, Sichuan pepper) and **trees** (spruce, birch,
+  BOP fir, maple, palm and more). Want onions? Find a region that has them. Oak grows
+  everywhere, and any sapling you plant grows anywhere.
+- Regions are much more uniform: each one now sticks to a single family of biomes instead of
+  patchworking vanilla and Biomes O' Plenty.
+- The region card on the world map no longer names a single biome; it shows the region's
+  wild plants and trees instead.
+- Only newly explored land changes. Terrain you have already visited stays as it is, and some
+  region names may change.
 
 
 ## 0.5.0 - 2026-11-22
