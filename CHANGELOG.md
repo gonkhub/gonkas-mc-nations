@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.6.0 - 2026-11-23
+
 - Every region now rolls its own **wild plants** (Farmer's Delight wild crops, pumpkins,
   melons, sweet berries, bamboo, flax, fluffy, Sichuan pepper) and **trees** (spruce, birch,
   BOP fir, maple, palm and more). Want onions? Find a region that has them. Oak grows
