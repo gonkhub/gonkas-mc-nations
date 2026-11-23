@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.4.0 - 2026-11-22
+
 - Every region now has its own stone. Underground, plain stone is replaced by the stone the
   region rolled: granite, diorite, andesite, tuff, calcite, Create's limestone, scoria,
   scorchia, asurine, crimsite, ochrum or veridium, or Quark's jasper, shale, limestone or
