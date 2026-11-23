@@ -13,6 +13,13 @@
 	#ore features). They ignore regions entirely, so with them on every region has
 	#copper and iron underground.
 	disableOreVeins = true
+	#Give each region ONE TerraBlender layout (vanilla, Biomes O' Plenty, ...) instead
+	#of letting TerraBlender's own patchwork switch between them every few hundred
+	#blocks. The region's climate is already pinned, so with this on a region draws
+	#its biomes from one family. Picked by the layouts' TerraBlender weights. Only
+	#chunks generated afterwards change; on an existing world the old/new border shows
+	#as a biome seam, and region names (which come from the main biome) can change.
+	lockBiomeLayout = true
 
 [ores]
 	#One ore per entry: name=icon item=placed feature,placed feature,...
@@ -90,3 +97,62 @@
 	# Default: 4
 	# Range: 1 ~ 20
 	abundantMultiplier = 4
+
+[plants]
+	#Each region rolls which wild plants grow in it. A plant the region did not roll
+	#does not generate there at all; one it did roll generates even where the
+	#region's biomes would not normally carry it (see supply). Seeds and crops from
+	#anywhere else - grass, loot, mob drops, trades - are untouched, and anything
+	#planted by a player grows anywhere. Only affects chunks generated afterwards.
+	enabled = true
+	#One plant per entry: name=icon item=placed feature,placed feature,...[=tag,tag]
+	#Tags limit which regions can roll it, as for mobs: hot, cold, temperate, dry,
+	#wet, nothot, notcold (all must hold). Entries whose features are all missing
+	#(mod not installed) are skipped. Plants not listed here generate as normal.
+	#Sugar cane is deliberately not listed: paper and books stay available everywhere.
+	pool = ["onion=farmersdelight:onion=farmersdelight:patch_wild_onions", "cabbage=farmersdelight:cabbage=farmersdelight:patch_wild_cabbages", "tomato=farmersdelight:tomato=farmersdelight:patch_wild_tomatoes=notcold", "carrot=minecraft:carrot=farmersdelight:patch_wild_carrots", "potato=minecraft:potato=farmersdelight:patch_wild_potatoes", "beetroot=minecraft:beetroot=farmersdelight:patch_wild_beetroots", "rice=farmersdelight:rice_panicle=farmersdelight:patch_wild_rice=wet", "pumpkin=minecraft:pumpkin=minecraft:patch_pumpkin", "melon=minecraft:melon_slice=minecraft:patch_melon,minecraft:patch_melon_sparse=notcold", "sweet_berries=minecraft:sweet_berries=minecraft:patch_berry_common,minecraft:patch_berry_rare=nothot", "bamboo=minecraft:bamboo=minecraft:bamboo,minecraft:bamboo_light=notcold,wet", "flax=supplementaries:flax=supplementaries:wild_flax", "silent_flax=silentgear:flax_fiber=silentgear:wild_flax", "fluffy=silentgear:fluffy_puff=silentgear:wild_fluffy", "sichuan_pepper=kaleidoscope_grilling:sichuan_pepper=kaleidoscope_grilling:pepper_tree"]
+	# Default: 3
+	# Range: 0 ~ 20
+	plantsMin = 3
+	# Default: 5
+	# Range: 0 ~ 20
+	plantsMax = 5
+	#Chance each rolled plant comes up abundant.
+	# Default: 0.15
+	# Range: 0.0 ~ 1.0
+	abundantChance = 0.15
+	#How many times over an abundant plant generates.
+	# Default: 3
+	# Range: 1 ~ 10
+	abundantMultiplier = 3
+	#Place a rolled plant in chunks whose biome would not carry it (wild cabbages are
+	#beach-only, wild rice wet-only, wild onions mid-temperature only), at the plant's
+	#own rate. Without this a region can roll a plant that never appears in it. The
+	#plant's own ground checks still apply: wild cabbages need sand and wild rice
+	#needs shallow water, so those turn up on the region's beaches and riverbanks.
+	supply = true
+
+[trees]
+	#Each region rolls which tree types grow in it. A tree the region did not roll is
+	#swapped, where worldgen would have placed it, for one the region did roll or a
+	#universal one, so forests keep their density. Bush-sized trees of a type the
+	#region lacks are dropped instead. Saplings planted by players grow anywhere.
+	#Only affects chunks generated afterwards.
+	enabled = true
+	#Tree types every region has, in the same format as the pool (weight and tags are
+	#ignored). Keeps basic wood - and the saplings Tree Physics and the Minecolonies
+	#lumberjack depend on - obtainable everywhere.
+	universal = ["oak=minecraft:oak_log=minecraft:oak=1"]
+	#Tree pool: name=trunk block,trunk block,...=configured feature=weight[=tag,tag].
+	#A tree is recognised by its trunk block, so every vanilla and modded variant of
+	#a type is covered at once. The configured feature is what is grown in its place
+	#elsewhere in the region. Tags as for plants. Trees whose trunk is in neither
+	#list (Thaumaturge greatwood and silverwood, mushrooms) are left alone.
+	pool = ["spruce=minecraft:spruce_log=minecraft:spruce=6=nothot", "birch=minecraft:birch_log=minecraft:birch=6=nothot", "dark_oak=minecraft:dark_oak_log=minecraft:dark_oak=3=temperate", "jungle=minecraft:jungle_log=minecraft:jungle_tree=4=hot,wet", "acacia=minecraft:acacia_log=minecraft:acacia=5=hot", "cherry=minecraft:cherry_log=minecraft:cherry=2=temperate", "mangrove=minecraft:mangrove_log=minecraft:mangrove=2=notcold,wet", "fir=biomesoplenty:fir_log=biomesoplenty:fir_tree=5=nothot", "pine=biomesoplenty:pine_log=biomesoplenty:pine_tree=4=nothot", "maple=biomesoplenty:maple_log=biomesoplenty:red_maple_tree=4=nothot", "redwood=biomesoplenty:redwood_log,biomesoplenty:redwood_wood=biomesoplenty:redwood_tree=2=temperate", "mahogany=biomesoplenty:mahogany_log=biomesoplenty:mahogany_tree=3=notcold,wet", "jacaranda=biomesoplenty:jacaranda_log=biomesoplenty:jacaranda_tree=3=notcold", "palm=biomesoplenty:palm_log=biomesoplenty:palm_tree=3=hot", "willow=biomesoplenty:willow_log=biomesoplenty:willow_tree=3=wet", "dead=biomesoplenty:dead_log=biomesoplenty:dying_tree=2", "magic=biomesoplenty:magic_log=biomesoplenty:magic_tree=1", "umbran=biomesoplenty:umbran_log=biomesoplenty:umbran_tree=1"]
+	#How many pool trees a region rolls, on top of the universal ones.
+	# Default: 2
+	# Range: 0 ~ 20
+	treesMin = 2
+	# Default: 3
+	# Range: 0 ~ 20
+	treesMax = 3
