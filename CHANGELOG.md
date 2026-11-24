@@ -22,6 +22,26 @@ record lives in `docs/`, which deliberately stays out of this repo.
   world as fixed, rare sites that stay dormant until someone walks up to one. Only land
   explored after this update gets them. Players with very high warp can still have one open
   near them.
+- **Free trade everywhere.** Money and treasuries are switched off for now: any colony trades
+  with any colony it can reach, at no cost, nation or not. Being in a nation is cosmetic for
+  now (no leases or leader rights). Selling to colonies for coins and the Mechanical Broker
+  are off until money comes back.
+- **Caravans follow the roads.** Caravans now walk the Minecolonies road signs between
+  colonies, and only go where a sign path exists. They ride a tamed, saddled horse from the
+  colony's Stable: the trip is as fast as that horse, and its bags and Icy's Better Horses
+  cart chest carry extra goods. The crew always comes home, bringing the horse back.
+- **Water trade needs docks.** Trading by water needs a dock at each colony (a fisherman's
+  hut, or a dock or pier decoration) on one connected body of water. Colonies send their own
+  provisioned boats, and players' ships can carry the goods too. Where there's a railway,
+  colonies wait for a train instead. Airships and carts no longer create trade routes.
+- **World map region tab.** Hovering over a region now shows just its name. Click to pin a
+  region tab with labelled ores, plants, trees and mobs, and hover over any icon for its name.
+- **Varied continents.** Continents beyond the starting one now vary in size, sit at uneven
+  distances, have more irregular coasts and no longer line up on a grid. The starting
+  continent is unchanged.
+- **Region presets.** Some regions on new continents now roll a themed preset (Great Desert,
+  Frozen Wastes, Ghost Orchard... up to the legendary Llama Kingdom), shown on the region
+  tab. The starting continent never gets one.
 
 
 ## 0.6.0 - 2026-11-23
