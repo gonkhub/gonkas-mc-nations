@@ -52,11 +52,11 @@
 	#Average chunks per naturally generated lesser Crimson Portal. Higher values make portals rarer; 0, the default, disables natural generation and crimson ranger patrols open portals instead.
 	# Default: 0
 	# Range: 0 ~ 1000000
-	crimsonPortalRarity = 0
+	crimsonPortalRarity = 2000
 	#Chance from 0 to 100 that a crimson ranger patrol spawns near a random overworld player at each daytime attempt, about every 10 minutes from day 5 on. 0 disables patrols.
 	# Default: 10.0
 	# Range: 0.0 ~ 100.0
-	crimsonPatrolChance = 10.0
+	crimsonPatrolChance = 0.0
 	#Allows hungry nodes to destroy edible blocks.
 	hungryNodeEatsBlocks = true
 	#Allows hungry nodes to pull in and consume entities, including dropped items.
