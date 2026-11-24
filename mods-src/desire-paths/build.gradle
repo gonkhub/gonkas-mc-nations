@@ -18,14 +18,21 @@ sourceSets {
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
+    // Drives a real client for screen recordings (./gradlew runDemo). Never shipped.
+    demo {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
 }
 configurations {
     gametestImplementation.extendsFrom implementation
+    demoImplementation.extendsFrom implementation
 }
 
 neoForge {
     version = project.neo_version
     addModdingDependenciesTo(sourceSets.gametest)
+    addModdingDependenciesTo(sourceSets.demo)
 
     runs {
         client {
@@ -40,6 +47,11 @@ neoForge {
             sourceSet = sourceSets.gametest
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
+        demo {
+            client()
+            sourceSet = sourceSets.demo
+            programArguments.addAll '--quickPlaySingleplayer', 'demo', '--width', '1280', '--height', '720'
+        }
         configureEach {
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             logLevel = org.slf4j.event.Level.INFO
@@ -50,6 +62,7 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.gametest)
+            sourceSet(sourceSets.demo)
         }
     }
 }
