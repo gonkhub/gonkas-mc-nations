@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "desire_paths:grass_dirt_inter",
+    "desire_paths:mycelium_dirt_inter",
+    "desire_paths:podzol_dirt_inter",
+    "desire_paths:dirt_coarse_inter",
+    "desire_paths:coarse_path_inter"
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "desiretramples=0,snowy=false": [
+      {
+        "model": "desire_paths:block/grass_dirt_inter_0"
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_0",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_0",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_0",
+        "y": 270
+      }
+    ],
+    "desiretramples=0,snowy=true": {
+      "model": "minecraft:block/grass_block_snow"
+    },
+    "desiretramples=1,snowy=false": [
+      {
+        "model": "desire_paths:block/grass_dirt_inter_1"
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_1",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_1",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_1",
+        "y": 270
+      }
+    ],
+    "desiretramples=1,snowy=true": {
+      "model": "minecraft:block/grass_block_snow"
+    },
+    "desiretramples=2,snowy=false": [
+      {
+        "model": "desire_paths:block/grass_dirt_inter_2"
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_2",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_2",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_2",
+        "y": 270
+      }
+    ],
+    "desiretramples=2,snowy=true": {
+      "model": "minecraft:block/grass_block_snow"
+    },
+    "desiretramples=3,snowy=false": [
+      {
+        "model": "desire_paths:block/grass_dirt_inter_3"
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_3",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_3",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_3",
+        "y": 270
+      }
+    ],
+    "desiretramples=3,snowy=true": {
+      "model": "minecraft:block/grass_block_snow"
+    },
+    "desiretramples=4,snowy=false": [
+      {
+        "model": "desire_paths:block/grass_dirt_inter_4"
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_4",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_4",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_4",
+        "y": 270
+      }
+    ],
+    "desiretramples=4,snowy=true": {
+      "model": "minecraft:block/grass_block_snow"
+    },
+    "desiretramples=5,snowy=false": [
+      {
+        "model": "desire_paths:block/grass_dirt_inter_5"
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_5",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_5",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/grass_dirt_inter_5",
+        "y": 270
+      }
+    ],
+    "desiretramples=5,snowy=true": {
+      "model": "minecraft:block/grass_block_snow"
+    }
+  }
+}
