@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.7.0 - 2026-11-24
+
 - **Crimson Portals no longer come to you.** Crimson Ranger patrols, which spawned near
   players and opened a portal on the spot, are gone. Lesser Crimson Portals now sit in the
   world as fixed, rare sites that stay dormant until someone walks up to one. Only land
