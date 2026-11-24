@@ -17,7 +17,9 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **Desire paths.** Grass, podzol and mycelium slowly wear into dirt, then coarse dirt, then a
+  dirt path where players, villagers, colonists and caravans walk often. It takes a lot of
+  traffic, worn ground grows back if left alone, and paths never make you faster.
 
 
 ## 0.7.0 - 2026-11-24
