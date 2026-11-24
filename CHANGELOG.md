@@ -17,7 +17,9 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **Translating a cave tablet no longer kicks you.** Finishing the Spelunkery Table
+  minigame, or reading a Cave Codex, disconnected the player (and anyone nearby) from the
+  server. Cave Book research now unlocks normally.
 
 
 ## 0.7.0 - 2026-11-24
