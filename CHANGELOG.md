@@ -17,7 +17,8 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **Trampled grass matches the grass around it.** It was a duller, greyer green than
+  untouched grass; it now gets the same colour.
 
 
 ## 0.8.0 - 2026-11-24
