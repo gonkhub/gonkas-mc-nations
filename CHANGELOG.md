@@ -17,7 +17,9 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **Colonies on the web map.** BlueMap now shows every MineColonies colony's borders in
+  its team colour, labelled with its name. Click a colony to see its size, buildings and
+  citizens. Toggle them under the Colonies layer.
 
 
 ## 0.7.0 - 2026-11-24

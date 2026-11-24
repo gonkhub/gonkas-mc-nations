@@ -124,6 +124,8 @@
 !/minecraft/mods/kubejs-create-neoforge-*.jar
 !/minecraft/mods/lootjs-neoforge-*.jar
 !/minecraft/mods/morejs-neoforge-*.jar
+# CurseForge-only; added from a supplied jar, so no index entry (#14)
+!/minecraft/mods/minecoloniesbluemap-*.jar
 
 # A vendored loader installer: 7 MB, reproducible from maven, no business in git.
 /scripts/.vendor/
