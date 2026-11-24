@@ -166,3 +166,10 @@ dist/
 !/minecraft/mods/yet_another_config_lib_v3-3.8.2+1.21.1-neoforge.jar
 
 minecraft/particular_cache/
+
+# ── Shaders: per-player, never shipped ──
+# Iris ships (mods/.index/iris.pw.toml); the packs and the active-pack setting do not.
+# Per-pack option files are written inside shaderpacks/ as <pack>.txt, so the folder
+# covers them. .packignore keeps both out of the player zip.
+/minecraft/shaderpacks/
+/minecraft/config/iris.properties

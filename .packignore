@@ -53,3 +53,10 @@ minecraft/servers.dat_old
 
 # holds a generated auth token — KubeJS regenerates it on first run
 minecraft/kubejs/config/web_server.json
+
+# Shaders are a per-player choice, never pack content. Iris itself still ships (it is
+# in the mod index); what stays local is which packs someone has installed and which
+# one is switched on. A player who had the old iris.properties gets Iris's defaults:
+# no pack selected, so no shaders.
+minecraft/shaderpacks
+minecraft/config/iris.properties
