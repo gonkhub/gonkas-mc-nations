@@ -22,8 +22,13 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## 0.8.0 - 2026-11-24
 
-- **Continents and regions can be renamed.** Server operators can give any continent or
-  region a new name; it shows on everyone's map straight away and stays after restarts.
+- **Name the land you discover.** The first player to set foot on a continent or region
+  is its discoverer: open the world map, click the region, and click its name to rename it.
+  Everyone sees the new name straight away. Land already explored goes to whoever steps on
+  it first from now on.
+- **Continent cards.** Zoom the map out to continents and click one to see who discovered
+  it, its regions at a glance, and how many colonies, train stations and Nether portals it
+  has. Nether portals are counted from this update on.
 - **Translating a cave tablet no longer kicks you.** Finishing the Spelunkery Table
   minigame, or reading a Cave Codex, disconnected the player (and anyone nearby) from the
   server. Cave Book research now unlocks normally.
