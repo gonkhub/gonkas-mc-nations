@@ -63,6 +63,9 @@ EXTRA_EXCLUDES = [
     # packwiz bookkeeping. Players do not run packwiz.
     "minecraft/mods/.index",
     "minecraft/mods/hand-installed.sha1",
+    # The updater's source and build script. Only the built jar ships, written into
+    # the zip explicitly below as updater/nations-updater.jar.
+    "tools",
     # This script's own output, and the ignore file itself.
     "dist",
     ".packignore",
@@ -80,6 +83,10 @@ You need Prism Launcher. It is free: https://prismlauncher.org/download/
 5. Select the instance and press Launch. First launch is slow: the mods have to build
    their caches. Two to five minutes is normal. It is not frozen.
 6. Multiplayer -> {NAME} is already in the list. Join.
+
+UPDATES ARE AUTOMATIC. Every time you press Launch, the instance checks GitHub for a
+newer release and downloads only the files that changed. You never re-import. If the
+update says the NeoForge version changed, press Launch a second time.
 
 If it asks you to add a Microsoft account, that is Prism, not this pack. You need a
 paid Minecraft Java Edition account; this does not work with Bedrock, the Windows 10
@@ -107,6 +114,12 @@ are client-side only.
 Your own settings, keybinds and waypoints are yours; the ones in here are only a
 starting point.
 """
+
+
+# The jar tools/updater/build.py produces, and where it sits inside the instance.
+UPDATER_JAR = PACK / "tools" / "updater" / "nations-updater.jar"
+UPDATER_IN_ZIP = "updater/nations-updater.jar"
+PRELAUNCH_INI = ('"\\"$INST_JAVA\\" -jar \\"$INST_DIR/%s\\""' % UPDATER_IN_ZIP)
 
 
 def read_packignore(path):
@@ -149,6 +162,12 @@ def clean_instance_cfg(text, server_name, server_address):
         # Max stays at 6 GB because the pack genuinely needs it.
         "MinMemAlloc": "2048",
         "MaxMemAlloc": "6096",
+        # Prism runs the updater before every launch, so players stay on the newest
+        # GitHub release without ever re-importing. The value is in QSettings' quoted
+        # form: unescaped quotes inside an INI value are dropped on read, and both
+        # paths can contain spaces. See tools/updater/.
+        "OverrideCommands": "true",
+        "PreLaunchCommand": PRELAUNCH_INI,
         "notes": ("Gonka's MC Nations - the server is already in your multiplayer "
                   "list as " + server_name + " (" + server_address + ")."),
     }
@@ -280,6 +299,7 @@ def main():
                       if path.suffix.lower() in stored_ext else zipfile.ZIP_DEFLATED)
             z.write(path, rel, compress_type=method)
         z.writestr("minecraft/servers.dat", servers_dat(server_name, server_address))
+        z.write(UPDATER_JAR, UPDATER_IN_ZIP, compress_type=zipfile.ZIP_STORED)
         z.writestr("HOW-TO-JOIN.txt", readme)
 
     size = zip_path.stat().st_size
