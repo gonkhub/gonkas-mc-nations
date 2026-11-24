@@ -26,6 +26,13 @@ record lives in `docs/`, which deliberately stays out of this repo.
   continents out, it gets brutal on purpose. Skeletons keep their bows, creepers and
   spiders no longer wear invisible armor, and monsters no longer grow stronger every time
   their area reloads.
+- **Paths wear in where people walk.** Grass slowly tramples to dirt, then coarse dirt, and
+  eventually a dirt path wherever players, villagers, colonists and caravans travel often.
+  It takes dozens of crossings, never changes walking speed, and partly worn ground grows
+  back if left alone.
+- **Colonies on the web map.** BlueMap now shows every MineColonies colony's borders in
+  its team colour, labelled with its name. Click a colony to see its size, buildings and
+  citizens. Toggle them under the Colonies layer.
 
 
 ## 0.7.0 - 2026-11-24
