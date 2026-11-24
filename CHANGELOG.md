@@ -22,6 +22,8 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## 0.8.0 - 2026-11-24
 
+- **Continents and regions can be renamed.** Server operators can give any continent or
+  region a new name; it shows on everyone's map straight away and stays after restarts.
 - **Translating a cave tablet no longer kicks you.** Finishing the Spelunkery Table
   minigame, or reading a Cave Codex, disconnected the player (and anyone nearby) from the
   server. Cave Book research now unlocks normally.
