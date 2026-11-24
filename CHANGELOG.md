@@ -20,6 +20,12 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - **Translating a cave tablet no longer kicks you.** Finishing the Spelunkery Table
   minigame, or reading a Cave Codex, disconnected the player (and anyone nearby) from the
   server. Cave Book research now unlocks normally.
+- **Monsters now match the gear you have where you meet them.** The starter continent is
+  unchanged. Across the sea, monsters level up more gently and wear iron at most; diamond
+  gear stays rare until about 40-60k blocks out, netherite until further. Past five or six
+  continents out, it gets brutal on purpose. Skeletons keep their bows, creepers and
+  spiders no longer wear invisible armor, and monsters no longer grow stronger every time
+  their area reloads.
 
 
 ## 0.7.0 - 2026-11-24

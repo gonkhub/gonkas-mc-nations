@@ -1,0 +1,39 @@
+#Far From Home: replaces its monster level curve and monster gear with distance
+#bands that follow the gear players realistically have at each distance from spawn.
+#Distance is straight-line blocks from the world spawn point, as Far From Home measures
+#it. Far From Home's own healthScalingPerLevel, damageScalingPerLevel and
+#showVisualIndicators still apply; its chunksPerTier and gear settings no longer drive
+#monsters (they still drive loot bags, ore scaling and boss encounters).
+[farfromhome]
+	#Use the bands below. false hands monsters back to Far From Home's own linear
+	#curve and its own gear table, unchanged.
+	enabled = true
+	#Monster base level by distance: "blocks=level" anchor points, in increasing
+	#distance. Between two anchors the level rises in a straight line; past the last
+	#one it keeps rising at the last segment's slope. The base level is rounded down.
+	#Defaults: starter continent (0-4.8k) matches Far From Home's old curve; first
+	#neighbouring continents (14-30k) are tuned for unenchanted iron/diamond; 60-75k for
+	#netherite; from 90k on it climbs steeply on purpose.
+	levelCurve = ["0=1", "4800=6", "14000=11", "30000=17", "45000=24", "60000=32", "75000=42", "90000=65", "120000=140", "200000=400"]
+	#Each monster gets base level + a random 0..spread on top. Far From Home's own
+	#spread was its maxMonsterLevelPerTier (2).
+	# Default: 2
+	# Range: 0 ~ 50
+	levelSpread = 2
+	#Monsters in the c:bosses tag (every Cataclysm boss, the Wither) never go above
+	#this level, and never get gear. A boss is a fixed fight players gear up for; at
+	#the far-out levels its health would sit on the 1024 max-health cap and its
+	#damage would one-shot anything. 0 leaves bosses at level 0 (unscaled).
+	# Default: 10
+	# Range: 0 ~ 10000
+	bossMaxLevel = 10
+	#Monster gear by distance, one band per entry, in increasing distance:
+	#"fromBlocks,chance,leather,chain,gold,iron,diamond,netherite".
+	#chance is the chance a monster gets gear at all; it is interpolated between one
+	#band and the next. The six numbers are relative weights for the material of
+	#EACH piece, rolled per piece, so a geared monster usually wears a mixed set.
+	#Only zombies, skeletons and piglins (and their variants) get armor, because
+	#those are the monsters whose models show it; anything else would wear invisible
+	#armor. A weapon is only given to a monster with an empty hand, so a skeleton
+	#keeps its bow and a piglin its crossbow.
+	gearBands = ["0,0.05,100,0,0,0,0,0", "4800,0.11,0,50,50,0,0,0", "9600,0.13,0,40,30,30,0,0", "14000,0.16,0,30,10,60,0,0", "30000,0.22,0,15,5,78,2,0", "40000,0.26,0,5,0,85,10,0", "50000,0.30,0,0,0,70,30,0", "60000,0.36,0,0,0,35,60,5", "75000,0.45,0,0,0,10,65,25", "90000,0.60,0,0,0,0,40,60", "120000,0.75,0,0,0,0,0,100"]
