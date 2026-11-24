@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:player",
+    "minecraft:villager",
+    "minecraft:wandering_trader",
+    {
+      "id": "minecolonies:citizen",
+      "required": false
+    },
+    {
+      "id": "minecolonies:visitor",
+      "required": false
+    },
+    {
+      "id": "thee:caravan_porter",
+      "required": false
+    }
+  ]
+}

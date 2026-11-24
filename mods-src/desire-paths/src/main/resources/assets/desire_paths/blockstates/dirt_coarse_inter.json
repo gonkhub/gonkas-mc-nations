@@ -1,0 +1,106 @@
+{
+  "variants": {
+    "desiretramples=0": [
+      {
+        "model": "minecraft:block/dirt"
+      },
+      {
+        "model": "minecraft:block/dirt",
+        "y": 90
+      },
+      {
+        "model": "minecraft:block/dirt",
+        "y": 180
+      },
+      {
+        "model": "minecraft:block/dirt",
+        "y": 270
+      }
+    ],
+    "desiretramples=1": [
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1"
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1",
+        "y": 270
+      }
+    ],
+    "desiretramples=2": [
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1"
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_1",
+        "y": 270
+      }
+    ],
+    "desiretramples=3": [
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2"
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 270
+      }
+    ],
+    "desiretramples=4": [
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2"
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 270
+      }
+    ],
+    "desiretramples=5": [
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2"
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 90
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 180
+      },
+      {
+        "model": "desire_paths:block/dirt_coarse_inter_2",
+        "y": 270
+      }
+    ]
+  }
+}
