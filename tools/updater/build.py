@@ -53,8 +53,13 @@ def build_jar():
                         "-d", str(classes)] + sources, check=True)
         # Fixed timestamps so an unchanged source gives a byte-identical jar and git
         # does not see a new binary on every build.
+        # Implementation-Version is how an older base jar decides whether a staged
+        # nations-updater.next.jar is newer than itself (#27).
+        version = re.search(r'static final String VERSION = "([0-9.]+)"',
+                            (SRC / "gonka" / "updater" / "Updater.java").read_text(encoding="utf-8")).group(1)
         manifest = ("Manifest-Version: 1.0\r\n"
-                    "Main-Class: gonka.updater.Updater\r\n\r\n")
+                    "Main-Class: gonka.updater.Updater\r\n"
+                    "Implementation-Version: %s\r\n\r\n" % version)
         with zipfile.ZipFile(JAR, "w", zipfile.ZIP_DEFLATED) as z:
             info = zipfile.ZipInfo("META-INF/MANIFEST.MF", (2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED

@@ -61,10 +61,22 @@ import java.util.zip.InflaterInputStream;
  * network or GitHub failure (play what you have) and 1 only when the launch MUST be
  * repeated - the release changed mmc-pack.json, and Prism has already resolved the old
  * loader for this launch.
+ *
+ * Updating itself (#27): updater/nations-updater.jar is what instance.cfg runs, and
+ * Prism's java holds it open for the whole run, so it is never replaced. It is a
+ * trampoline. When a release ships a different updater, the run stages it as
+ * updater/nations-updater.next.jar. From the next launch on, the base jar sees a NEWER
+ * next.jar, copies it to updater/run/ (so the child does not lock next.jar, and can
+ * stage the one after it) and runs that copy as a child process with the console
+ * passed through. The child's exit code becomes this process's. A child that cannot
+ * start or dies oddly is ignored and the built-in updater runs instead, so a bad
+ * release can cost one extra JVM start, never a launch. Updaters before 1.2.0 skip
+ * updater/ entirely and never stage anything: those installs need the base jar
+ * replaced by hand once.
  */
 public final class Updater {
 
-    static final String VERSION = "1.1.0";
+    static final String VERSION = "1.2.0";
     static final String REPO = "gonkhub/gonkas-mc-nations";
     static final String USER_AGENT = "GonkasMCNations-Updater/" + VERSION;
 
@@ -82,8 +94,17 @@ public final class Updater {
     /** Never touched. instance.cfg holds the player's memory and Java settings. */
     static final Set<String> NEVER = Set.of("instance.cfg");
 
-    /** Our own folder - the running jar cannot replace itself on Windows anyway. */
+    /** Our own folder. Never written as pack content; the updater jar is handled apart. */
     static final String OWN_DIR = "updater/";
+
+    /** Where each release carries the updater, and where a newer one waits (#27). */
+    static final String SELF_ENTRY = "updater/nations-updater.jar";
+    static final String NEXT_JAR = "nations-updater.next.jar";
+    /** A delegated child's "Prism must relaunch" code; the base jar turns it into 1. */
+    static final int CHILD_RELAUNCH = 10;
+    static final String DELEGATED = "--delegated";
+    /** Test hook: a different "latest release" JSON URL. Never set by instance.cfg. */
+    static final String API_PROPERTY = "nations.updater.api";
 
     static final int THREADS = 3;
     /** Neighbouring entries closer than this are fetched in one request. */
@@ -110,11 +131,17 @@ public final class Updater {
     }
 
     public static void main(String[] args) {
-        Path inst = findInstance(args);
+        List<String> rest = new ArrayList<>(List.of(args));
+        boolean delegated = rest.remove(DELEGATED);
+        Path inst = findInstance(rest.toArray(new String[0]));
         log("Gonka's MC Nations updater " + VERSION + " - instance: " + inst);
+        if (!delegated) {
+            Integer code = handOff(inst);
+            if (code != null) System.exit(code);
+        }
         try {
             int code = new Updater(inst).run();
-            System.exit(code);
+            System.exit(code == 1 && delegated ? CHILD_RELAUNCH : code);
         } catch (Throwable t) {
             log("");
             log("Could not update: " + t);
@@ -135,6 +162,87 @@ public final class Updater {
         } catch (Exception e) {
             return Paths.get("").toAbsolutePath();
         }
+    }
+
+    // ───────────────────────────────────────────────────────────── self-update (#27)
+
+    /**
+     * Runs a newer staged updater instead of this one. Returns the exit code for Prism,
+     * or null to carry on with this jar's own run.
+     */
+    static Integer handOff(Path inst) {
+        Path own = inst.resolve("updater");
+        Path next = own.resolve(NEXT_JAR);
+        if (!Files.isRegularFile(next)) return null;
+        String version = jarVersion(next);
+        if (version == null) {
+            log("Ignoring " + NEXT_JAR + ": it is not a readable updater jar.");
+            return null;
+        }
+        // Not newer (this base jar came from a newer import): staging decides its fate.
+        if (compareVersions(version, VERSION) <= 0) return null;
+        try {
+            // A copy, so the child does not hold next.jar open and can stage its successor.
+            Path run = own.resolve("run").resolve("nations-updater.jar");
+            Files.createDirectories(run.getParent());
+            Files.copy(next, run, StandardCopyOption.REPLACE_EXISTING);
+
+            String java = ProcessHandle.current().info().command().orElse(
+                    Paths.get(System.getProperty("java.home"), "bin",
+                            System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java").toString());
+            List<String> cmd = new ArrayList<>(List.of(java));
+            String api = System.getProperty(API_PROPERTY);
+            if (api != null) cmd.add("-D" + API_PROPERTY + "=" + api);
+            cmd.addAll(List.of("-jar", run.toString(), DELEGATED, inst.toString()));
+
+            log("Handing over to updater " + version + ".");
+            int code = new ProcessBuilder(cmd).inheritIO().start().waitFor();
+            if (code == 0) return 0;
+            if (code == CHILD_RELAUNCH) return 1;
+            log("Updater " + version + " stopped with code " + code + "; running " + VERSION + " instead.");
+        } catch (Exception ex) {
+            log("Could not start updater " + version + " (" + ex + "); running " + VERSION + " instead.");
+        }
+        return null;
+    }
+
+    /** The Implementation-Version of an updater jar, or null if it is not one. */
+    static String jarVersion(Path jar) {
+        try (java.util.jar.JarFile jf = new java.util.jar.JarFile(jar.toFile())) {
+            java.util.jar.Manifest m = jf.getManifest();
+            String v = m == null ? null : m.getMainAttributes().getValue("Implementation-Version");
+            return v != null && v.matches("\\d+(\\.\\d+)*") ? v : null;
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
+    static int compareVersions(String a, String b) {
+        String[] x = a.split("\\."), y = b.split("\\.");
+        for (int i = 0; i < Math.max(x.length, y.length); i++) {
+            int p = i < x.length ? Integer.parseInt(x[i]) : 0, q = i < y.length ? Integer.parseInt(y[i]) : 0;
+            if (p != q) return Integer.compare(p, q);
+        }
+        return 0;
+    }
+
+    /**
+     * Should the release's updater be staged as next.jar? Not when it is the base jar
+     * (then any next.jar is a rollback leftover and goes) or already staged.
+     */
+    boolean wantsSelf(Entry e) throws IOException {
+        Path base = own.resolve("nations-updater.jar");
+        Path next = own.resolve(NEXT_JAR);
+        if (Files.isRegularFile(base) && Files.size(base) == e.size && crcOf(base) == e.crc) {
+            if (Files.deleteIfExists(next)) log("  removed " + OWN_DIR + NEXT_JAR + " (the release ships the base updater)");
+            return false;
+        }
+        return !(Files.isRegularFile(next) && Files.size(next) == e.size && crcOf(next) == e.crc);
+    }
+
+    /** Where a release entry is written: the instance path, except the updater itself. */
+    Path targetOf(Entry e) {
+        return e.name.equals(SELF_ENTRY) ? own.resolve(NEXT_JAR) : inst.resolve(e.name);
     }
 
     // ───────────────────────────────────────────────────────────── the run
@@ -181,6 +289,8 @@ public final class Updater {
         for (Entry e : byName.values()) {
             if (wants(e, state)) wanted.add(e);
         }
+        Entry selfJar = byName.get(SELF_ENTRY);
+        if (selfJar != null && wantsSelf(selfJar)) wanted.add(selfJar);
 
         List<Entry> toFetch = new ArrayList<>();
         for (Entry e : wanted) {
@@ -202,7 +312,7 @@ public final class Updater {
         // ── Everything is on disk and verified. Only now touch the instance. ──
         boolean loaderChanged = false;
         for (Entry e : wanted) {
-            Path target = inst.resolve(e.name);
+            Path target = targetOf(e);
             if (e.name.equals("mmc-pack.json")) {
                 // Prism rewrites this file with cached fields of its own, so a byte
                 // difference is normal. Only a different component version matters.
@@ -244,11 +354,10 @@ public final class Updater {
 
         log("Updated to " + rel.tag + ": " + wanted.size() + " file(s) written, " + removed + " removed.");
 
-        Entry selfJar = byName.get("updater/nations-updater.jar");
-        Path running = own.resolve("nations-updater.jar");
-        if (selfJar != null && Files.isRegularFile(running) && crcOf(running) != selfJar.crc) {
-            log("Note: this release ships a newer updater. It will keep working; re-importing");
-            log("the pack once will pick the new one up.");
+        if (selfJar != null && wanted.contains(selfJar)) {
+            String v = jarVersion(own.resolve(NEXT_JAR));
+            log("This release ships updater " + (v == null ? "(unknown version)" : v)
+                    + "; it takes over from the next launch.");
         }
 
         if (loaderChanged) {
@@ -337,7 +446,8 @@ public final class Updater {
     record Release(String tag, String zipUrl) {}
 
     Release latestRelease() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder(URI.create("https://api.github.com/repos/" + REPO + "/releases/latest"))
+        String api = System.getProperty(API_PROPERTY, "https://api.github.com/repos/" + REPO + "/releases/latest");
+        HttpRequest req = HttpRequest.newBuilder(URI.create(api))
                 .header("Accept", "application/vnd.github+json")
                 .header("User-Agent", USER_AGENT)
                 .timeout(Duration.ofSeconds(30))
