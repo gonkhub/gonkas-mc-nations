@@ -17,6 +17,16 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.9.0 - 2026-11-24
+
+- **Builders take generator cobble.** Colony Builders now accept the inert cobblestone and
+  inert stone from cobblestone generators wherever a building needs cobblestone or stone,
+  whether it's in their hut or in the warehouse. It is still useless in every recipe.
+- **Saddles can be crafted:** three leather, two string and three iron ingots.
+- **Auto-updating launcher.** The pack checks for a new version before the game starts.
 - **Trampled grass matches the grass around it.** It was a duller, greyer green than
   untouched grass; it now gets the same colour.
 
