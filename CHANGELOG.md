@@ -20,6 +20,15 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.9.2 - 2026-11-25
+
+- **Generator cobblestone and stone can be crafted with.** Cobble and stone from a lava+water
+  generator now make stairs, slabs, walls, stone tools, furnaces, levers, pistons and other
+  building and redstone pieces. They still can't be smelted, milled, crushed, or turned into
+  andesite, diorite or mossy cobblestone, so a generator still can't farm ores.
+- Silent Gear can no longer salvage stone tools back into cobblestone.
+
+
 ## 0.9.1 - 2026-11-24
 
 - **The server no longer crashes when you walk up to certain contraptions.** A contraption
