@@ -131,7 +131,7 @@ Edit the server's existing file; do not replace it.
 ```
 level-type=minecraft:normal
 max-tick-time=180000
-view-distance=8
+view-distance=16
 simulation-distance=6
 allow-flight=true
 spawn-protection=0
@@ -144,9 +144,10 @@ spawn-protection=0
   flight check without it.
 - **`spawn-protection=0`** — otherwise nobody can build near spawn, which is where the first
   colonies will go.
-- **view/simulation distance**: 8 and 6 are deliberate. `thee` and Minecolonies both keep work off
-  unloaded chunks on purpose, so a smaller simulation distance costs this pack much less than it
-  would a vanilla server.
+- **view/simulation distance**: 16 and 6 are deliberate. View distance is this server's biggest
+  memory lever - each player holds (2x16+1)^2, about 1,100 chunks - and 16 is the compromise with
+  Distant Horizons, which is client-only and can only build far terrain from chunks it is sent.
+  `thee` and Minecolonies keep work off unloaded chunks, so simulation distance stays small.
 
 ## 5. RAM and JVM
 

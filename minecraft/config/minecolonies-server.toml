@@ -41,7 +41,7 @@
 	#Set how long chunks stay loaded after player leaves, does not persist through restarts. [Default: 20, min: 1, max: 1440]
 	# Default: 20
 	# Range: 1 ~ 1440
-	loadtime = 20
+	loadtime = 5
 	#This controls how many chunks are loaded with the "Chunk Load Colony" option. The higher this value, the fewer chunks will be loaded. (The innermost chunks will be loaded first.) 1 = load all claimed chunks. [Default: 3, min: 1, max: 15]
 	# Default: 3
 	# Range: 1 ~ 15

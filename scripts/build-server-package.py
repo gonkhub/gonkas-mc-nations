@@ -156,8 +156,9 @@ PROPERTIES = [
      "Create jetpacks and Create Aeronautics airships both trip the vanilla flight check."),
     ("spawn-protection", "0",
      "otherwise nobody can build near spawn, which is where the first colonies go."),
-    ("view-distance", "8", "deliberate: this pack keeps work off unloaded chunks, so a smaller "
-                           "distance costs it much less than it would a vanilla server."),
+    ("view-distance", "16", "memory budget vs Distant Horizons: DH is client-only, so it can only "
+                            "build far terrain from chunks the server sends. The live server ran "
+                            "24 (~2,400 chunks held per player); 16 holds ~1,100 (#28)."),
     ("simulation-distance", "6", "same reasoning."),
     ("level-type", "minecraft:normal", "the pack's worldgen mods expect a normal overworld."),
 ]
