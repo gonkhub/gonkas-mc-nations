@@ -7,7 +7,7 @@
 # A client/server mismatch here is a hard connect failure, not a soft degrade.
 b1e284361dd66e7a7a495b046a0c5307049e5d10 *minecraft/mods/thee-1.48.0.jar
 46e4b29fc6de34963d6f519c8777a16c4509bd99 *minecraft/mods/chaosgate-1.0.0.jar
-13252ea60763065714dbad1d689b03762b2d670b *minecraft/mods/omnifix-1.8.0.jar
+b699f13698a6a9ecaa3485ea6abd6e7312a4c749 *minecraft/mods/omnifix-1.9.0.jar
 26264512098f1b10177669338bab21bbb09ba578 *minecraft/mods/atlas-1.5.0.jar
 edf131afd474151afe076ea975ce5fec5a206ad8 *minecraft/mods/kubejs-neoforge-2101.7.2-build.368.jar
 f54d9ff53909771d27e4d9d135c3707cd5d5f855 *minecraft/mods/kubejs-create-neoforge-2101.3.1-build.18.jar

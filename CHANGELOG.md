@@ -20,6 +20,13 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.9.1 - 2026-11-24
+
+- **The server no longer crashes when you walk up to certain contraptions.** A contraption
+  whose collision went haywire took the whole server down a second after anyone loaded in
+  next to it, and again on every restart. Now it just doesn't push you for that moment.
+
+
 ## 0.9.0 - 2026-11-24
 
 - **Builders take generator cobble.** Colony Builders now accept the inert cobblestone and
