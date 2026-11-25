@@ -20,6 +20,14 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.10.0 - 2026-11-25
+
+- **Colonies can trade with your Create storage.** Build a Freight Depot (Create: Colony
+  Logistics) and link it to a Stock Ticker. Its Logistics Coordinator and Packer Agents fill
+  colony requests from your Create network by train, and ship surplus back.
+- A colony now stays loaded for 5 minutes after its last member leaves, down from 20.
+
+
 ## 0.9.2 - 2026-11-25
 
 - **Generator cobblestone and stone can be crafted with.** Cobble and stone from a lava+water
