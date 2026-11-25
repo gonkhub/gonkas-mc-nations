@@ -1,0 +1,43 @@
+# Files that belong to the PLAYER, not the pack (#26).
+#
+# Every updater obeys this list: the in-instance updater (tools/updater), the local
+# release-instance updater and the dev-instance sync. It also ships at the root of
+# every release zip, so a newer list protects players without a newer updater jar.
+#
+#   seed <pattern>   a starting point. Written when the player has none; never
+#                    overwritten, never deleted. Settings, keybinds, client configs.
+#   keep <pattern>   never written, never overwritten, never deleted. Player data.
+#
+# Patterns are paths from the instance root. `*` matches within one folder name,
+# `**` matches across folders. A pattern that names a folder covers everything in it.
+#
+# Changing a seeded file in a release does NOT reach existing players - that is the
+# point. If a client setting ever has to be forced (one that crashes, say), it goes
+# out as a pack fix somewhere else (KubeJS, omnifix), not by editing the seed.
+#
+# The release zip takes seeded files from seed/, frozen, never from the packer's own
+# live instance - otherwise every build would carry whoever-built-it's keybinds.
+
+# ── Vanilla settings: keybinds, video, sound, enabled resource packs ──
+seed minecraft/options.txt
+seed minecraft/servers.dat
+
+# ── Mod client settings ──
+seed minecraft/config/**client*
+seed minecraft/config/jei/client
+seed minecraft/config/mezz_config/client
+seed minecraft/config/sodium-options.json
+seed minecraft/config/DistantHorizons.toml
+seed minecraft/config/xaero
+seed minecraft/config/xaerohud.txt
+
+# ── Player data ──
+keep minecraft/xaero
+keep minecraft/XaeroWaypoints*
+keep minecraft/Distant_Horizons_server_data
+keep minecraft/maptable
+keep minecraft/shaderpacks
+keep minecraft/config/iris.properties
+keep minecraft/saves
+keep minecraft/screenshots
+keep minecraft/schematics

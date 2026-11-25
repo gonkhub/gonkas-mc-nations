@@ -63,6 +63,11 @@ def build_jar():
                 info = zipfile.ZipInfo(cls.relative_to(classes).as_posix(), (2026, 1, 1, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_DEFLATED
                 z.writestr(info, cls.read_bytes())
+            # The built-in list of files the updater must leave to the player (#26).
+            # Each release also ships its own copy, which can only add to this one.
+            info = zipfile.ZipInfo("player-owned.txt", (2026, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            z.writestr(info, (PACK / "player-owned.txt").read_bytes())
     print("wrote %s (%d bytes)" % (JAR, JAR.stat().st_size))
 
 

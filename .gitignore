@@ -177,3 +177,14 @@ minecraft/particular_cache/
 # covers them. .packignore keeps both out of the player zip.
 /minecraft/shaderpacks/
 /minecraft/config/iris.properties
+
+# ── Player settings: the PLAYER's, never the repo's (#26) ──
+# Tracking these meant every stash, reset or checkout a release session ran also rolled
+# back the keybinds and video settings of whoever plays out of this checkout. The
+# starting-point copies players get live in /seed/, frozen; player-owned.txt is the list.
+/minecraft/options.txt
+/minecraft/config/**/*client*
+/minecraft/config/sodium-options.json
+/minecraft/config/DistantHorizons.toml
+/minecraft/config/xaero/
+/minecraft/config/xaerohud.txt

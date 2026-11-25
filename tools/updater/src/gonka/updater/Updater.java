@@ -64,7 +64,7 @@ import java.util.zip.InflaterInputStream;
  */
 public final class Updater {
 
-    static final String VERSION = "1.0.0";
+    static final String VERSION = "1.1.0";
     static final String REPO = "gonkhub/gonkas-mc-nations";
     static final String USER_AGENT = "GonkasMCNations-Updater/" + VERSION;
 
@@ -73,11 +73,11 @@ public final class Updater {
             "minecraft/mods/", "minecraft/kubejs/", "minecraft/defaultconfigs/");
 
     /**
-     * Written only if missing. Minecraft rewrites both on every launch (keybinds, video
-     * settings, the server list and its cached icons), so "changed locally" is always
-     * true and the release copy is only ever a starting point.
+     * Files that belong to the player (#26): settings are written only if missing, data
+     * is never touched. The list is player-owned.txt - built into this jar, and also read
+     * from the root of each release so a newer list applies without a newer updater.
      */
-    static final Set<String> SEED_ONLY = Set.of("minecraft/options.txt", "minecraft/servers.dat");
+    Owned owned = Owned.builtIn();
 
     /** Never touched. instance.cfg holds the player's memory and Java settings. */
     static final Set<String> NEVER = Set.of("instance.cfg");
@@ -166,6 +166,16 @@ public final class Updater {
             Files.writeString(own.resolve("staging.tag"), rel.tag);
         }
 
+        // The release's own list adds to the built-in one; it can never remove from it.
+        Entry ownedList = byName.get(Owned.FILE);
+        if (ownedList != null) {
+            try {
+                owned.add(fetchSmall(ownedList));
+            } catch (Exception ex) {
+                log("  could not read the release's " + Owned.FILE + " (" + ex.getMessage() + "); using the built-in list");
+            }
+        }
+
         // Decide what to fetch.
         List<Entry> wanted = new ArrayList<>();
         for (Entry e : byName.values()) {
@@ -207,7 +217,7 @@ public final class Updater {
         // replacement is a duplicate-mod-id crash, so this is not housekeeping.
         int removed = 0;
         for (String path : state.paths()) {
-            if (byName.containsKey(path) || SEED_ONLY.contains(path) || !managed(path)) continue;
+            if (byName.containsKey(path) || !managed(path) || owned.seed(path)) continue;
             if (Files.deleteIfExists(inst.resolve(path))) {
                 log("  removed " + path);
                 removed++;
@@ -258,7 +268,7 @@ public final class Updater {
         if (!managed(e.name)) return false;
         Path p = inst.resolve(e.name);
         if (!Files.isRegularFile(p)) return true;
-        if (SEED_ONLY.contains(e.name)) return false;
+        if (owned.seed(e.name)) return false;   // the player's copy, whatever it holds
 
         if (e.name.equals("mmc-pack.json")) {
             // Prism rewrites this with cached fields, so bytes always drift. What must
@@ -283,8 +293,9 @@ public final class Updater {
         return installed == null || installed != e.crc;
     }
 
-    static boolean managed(String path) {
+    boolean managed(String path) {
         if (NEVER.contains(path)) return false;
+        if (owned.keep(path)) return false;
         if (path.startsWith(OWN_DIR)) return false;
         if (path.startsWith("/") || path.contains("..") || path.contains(":")) return false;
         return true;
@@ -670,6 +681,60 @@ public final class Updater {
             left -= r; done.addAndGet(r); lastProgress.set(System.currentTimeMillis());
             return r;
         }
+    }
+
+    // ───────────────────────────────────────────────────────────── player-owned files
+
+    /** player-owned.txt: "seed <pattern>" and "keep <pattern>" lines. See that file. */
+    static final class Owned {
+        static final String FILE = "player-owned.txt";
+        final List<Pattern> seed = new ArrayList<>();
+        final List<Pattern> keep = new ArrayList<>();
+
+        static Owned builtIn() {
+            Owned o = new Owned();
+            try (InputStream in = Updater.class.getResourceAsStream("/" + FILE)) {
+                if (in == null) throw new IllegalStateException(FILE + " is missing from the updater jar");
+                o.add(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+            } catch (IOException ex) {
+                throw new IllegalStateException("could not read the built-in " + FILE, ex);
+            }
+            return o;
+        }
+
+        void add(String text) {
+            for (String raw : text.split("\\R")) {
+                String line = raw.strip();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                String[] f = line.split("\\s+", 2);
+                if (f.length != 2) continue;
+                if (f[0].equals("seed")) seed.add(glob(f[1]));
+                else if (f[0].equals("keep")) keep.add(glob(f[1]));
+                // Unknown kinds are ignored, so a newer list never breaks an older updater.
+            }
+        }
+
+        /** `**` crosses folders, `*` stays in one; a match on any leading folder covers the rest. */
+        static Pattern glob(String g) {
+            StringBuilder re = new StringBuilder();
+            String s = g.replace('\\', '/');
+            while (s.endsWith("/")) s = s.substring(0, s.length() - 1);
+            for (int i = 0; i < s.length(); i++) {
+                char c = s.charAt(i);
+                if (c == '*' && i + 1 < s.length() && s.charAt(i + 1) == '*') { re.append(".*"); i++; }
+                else if (c == '*') re.append("[^/]*");
+                else re.append(Pattern.quote(String.valueOf(c)));
+            }
+            return Pattern.compile(re + "(/.*)?", Pattern.CASE_INSENSITIVE);
+        }
+
+        static boolean any(List<Pattern> ps, String path) {
+            for (Pattern p : ps) if (p.matcher(path).matches()) return true;
+            return false;
+        }
+
+        boolean seed(String path) { return any(seed, path); }
+        boolean keep(String path) { return any(keep, path); }
     }
 
     // ───────────────────────────────────────────────────────────── state

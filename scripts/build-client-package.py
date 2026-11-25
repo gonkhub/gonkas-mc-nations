@@ -28,6 +28,7 @@ import zipfile
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import packmeta  # noqa: E402
+import playerowned  # noqa: E402
 
 PACK = HERE.parent
 OUT_DIR = PACK / "dist"
@@ -68,6 +69,8 @@ EXTRA_EXCLUDES = [
     "tools",
     # This script's own output, and the ignore file itself.
     "dist",
+    # Frozen starting-point settings, written into the zip at their real paths below.
+    "seed",
     ".packignore",
 ]
 
@@ -250,6 +253,11 @@ def main():
                 return True
         return False
 
+    # Player settings and data never come from this machine's instance (#26): a build
+    # would otherwise ship whoever packed it's keybinds and video settings, and any
+    # change there reached players. Settings ship as the frozen copies in seed/.
+    owned = playerowned.load()
+
     files = []
     for path in sorted(PACK.rglob("*")):
         if not path.is_file():
@@ -257,7 +265,14 @@ def main():
         rel = path.relative_to(PACK).as_posix()
         if excluded(rel):
             continue
+        if rel != "minecraft/servers.dat" and (owned.seed(rel) or owned.keep(rel)):
+            continue
         files.append((rel, path))
+    seed_dir = PACK / "seed"
+    for path in sorted(seed_dir.rglob("*")):
+        if path.is_file():
+            files.append((path.relative_to(seed_dir).as_posix(), path))
+    files.sort()
 
     cfg_path = PACK / "instance.cfg"
     cfg_text = cfg_path.read_text(encoding="utf-8")

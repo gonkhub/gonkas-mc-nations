@@ -42,8 +42,12 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEFAULT_NAME = "GonkasMCNations-dev"
 DISPLAY_NAME = "Gonka's MC Nations (dev)"
 
-# Copied only if the dev instance does not have one yet.
-SEED_ONLY = {"minecraft/options.txt"}
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import playerowned  # noqa: E402
+
+# Settings are copied only if the dev instance has none; player data is never touched.
+# Seeded files come from seed/, not from minecraft/, which git does not track (#26).
+OWNED = playerowned.load()
 
 
 def prism_dir(arg):
@@ -171,11 +175,12 @@ def main():
     print("%s %s" % ("Creating" if creating else "Updating", dest))
 
     copied = skipped = 0
-    for rel in pack_files():
-        if not wanted_in_instance(rel):
+    for repo_rel in pack_files():
+        rel = repo_rel[len("seed/"):] if repo_rel.startswith("seed/") else repo_rel
+        if not wanted_in_instance(rel) or OWNED.keep(rel):
             continue
-        src, dst = ROOT / rel, dest / rel
-        if rel in SEED_ONLY and dst.exists():
+        src, dst = ROOT / repo_rel, dest / rel
+        if OWNED.seed(rel) and dst.exists():
             continue
         if rel == "instance.cfg":
             # Pack settings come from the repo, the display name says "dev", and

@@ -9,7 +9,8 @@ instance's pack.json, it downloads the release zip, checks it against the releas
   * jars in minecraft/mods/ that the new release does not ship are deleted, so a
     removed mod cannot keep loading;
   * worlds, waypoints, screenshots, logs and anything else not in the zip are left alone;
-  * options.txt is kept if the instance already has one (key binds, video settings);
+  * files in player-owned.txt are the player's (#26): settings and keybinds are written
+    only when missing, map / waypoint / shader / Distant Horizons data never at all;
   * instance.cfg takes the release's pack settings but keeps this machine's instance
     name, Java choice, memory, account binding and playtime, and its notes= line ends
     with "Version X.Y.Z (updated YYYY-MM-DD)." so the installed release is visible.
@@ -48,7 +49,8 @@ STATE = pathlib.Path(os.environ.get("LOCALAPPDATA", pathlib.Path.home())) \
     / "GonkasMCNations-updater"
 LOG = STATE / "update-release.log"
 
-SEED_ONLY = {"minecraft/options.txt"}
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import playerowned  # noqa: E402
 # instance.cfg keys that belong to this machine/player, not to the release.
 LOCAL_KEYS = {
     "name", "iconKey", "JavaPath", "JavaSignature", "JavaVendor", "JavaVersion",
@@ -217,11 +219,15 @@ def apply(zpath, inst, old_version, new_version):
                     p.unlink()
                     removed.append(p.name)
 
+        # The repo's list plus the release's own copy; either can only protect more.
+        owned = playerowned.load(z.read(playerowned.FILE).decode("utf-8")
+                                 if playerowned.FILE in names else None)
+
         changed = 0
         for m in members:
             rel = m.filename.replace("\\", "/")
             dst = inst / rel
-            if rel in SEED_ONLY and dst.exists():
+            if owned.keep(rel) or (owned.seed(rel) and dst.exists()):
                 continue
             data = z.read(m)
             if rel == "instance.cfg":
