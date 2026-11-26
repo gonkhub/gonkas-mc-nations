@@ -17,7 +17,9 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **Cobblestone generators make normal cobblestone and stone again.** Inert cobblestone is
+  retired for now. Any inert cobblestone or stone you already have can be crafted back into
+  the normal block, one for one.
 
 
 ## 0.10.0 - 2026-11-25
