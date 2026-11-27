@@ -111,9 +111,9 @@ public final class Terrain {
             ground = y;
         } else if (chunk != null && chunk.getPersistedStatus().isOrAfter(ChunkStatus.NOISE)) {
             noiseColumns++;
-            // heightmaps hold the first free y above the column
-            ground = chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, x & 15, z & 15) - 1;
-            int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x & 15, z & 15) - 1;
+            // ChunkAccess.getHeight already returns the top block's y (the heightmap's first free y, minus one)
+            ground = chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, x & 15, z & 15);
+            int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x & 15, z & 15);
             if (top > ground) water = top;
         } else {
             estimatedColumns++;
