@@ -7,3 +7,8 @@ libs/
 .idea/
 *.iml
 run-loco/
+# research notes and experiments stay local (see the repo's .gitignore)
+RESEARCH.md
+autotrack-test/
+prototype/
+*.png
