@@ -210,7 +210,11 @@ public final class Harness {
                         gaps++;
                         if (examples.size() < 6) examples.add("gap at " + p.toShortString() + ": " + level.getBlockState(p).getBlock());
                     }
-                    if (level.getBlockState(p.move(0, 1, 0)).blocksMotion()) buriedStraight++;
+                    if (level.getBlockState(p.move(0, 1, 0)).blocksMotion()) {
+                        buriedStraight++;
+                        if (examples.size() < 6) examples.add("on straight rails: " + level.getBlockState(p).getBlock() + " at " + p.toShortString()
+                                + " (below: " + level.getBlockState(p.below()).getBlock() + " " + level.getBlockState(p.below()) + ")");
+                    }
                 }
             }
         }

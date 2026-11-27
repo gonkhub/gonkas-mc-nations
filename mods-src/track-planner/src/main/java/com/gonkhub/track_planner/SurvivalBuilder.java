@@ -46,7 +46,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Survival building, Factorio style: hold the Rail Planner near one of your blueprints and the nearest
+ * Survival building, Factorio style: hold the Rail Planner, with building switched on, near one of your blueprints and the nearest
  * unbuilt piece within REACH builds itself, one piece every EVERY ticks. It is paid for like doing it by hand:
  * track from your inventory (whatever Create track you carry; Create's own placement takes it), and every
  * block in the way dug with a suitable tool from your inventory, which wears down and whose drops you get.
@@ -55,7 +55,7 @@ import java.util.UUID;
  */
 @EventBusSubscriber(modid = TrackPlanner.MOD_ID)
 public final class SurvivalBuilder {
-    public static final double REACH = 20;
+    public static final double REACH = 8;
     public static final int EVERY = 10;
 
     /**
@@ -84,8 +84,9 @@ public final class SurvivalBuilder {
         }
     }
 
+    /** Holding a Rail Planner with building switched on (the toggle key, or sneak-right-click the air). */
     static boolean holdsPlanner(ServerPlayer p) {
-        return p.getMainHandItem().is(TrackPlanner.RAIL_PLANNER.get()) || p.getOffhandItem().is(TrackPlanner.RAIL_PLANNER.get());
+        return RailPlannerItem.building(p.getMainHandItem()) || RailPlannerItem.building(p.getOffhandItem());
     }
 
     /** The nearest unbuilt piece within reach of a player, built from their inventory. */

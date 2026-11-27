@@ -58,6 +58,11 @@ public final class TrackPlanner {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>> PLAN_START =
             COMPONENTS.registerComponentType("plan_start", b -> b.persistent(BlockPos.CODEC).networkSynchronized(BlockPos.STREAM_CODEC));
 
+    /** Whether holding this Rail Planner builds nearby blueprints; off (absent) by default, so planning doesn't build. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> BUILDING =
+            COMPONENTS.registerComponentType("building", b -> b.persistent(com.mojang.serialization.Codec.BOOL)
+                    .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.BOOL));
+
     public TrackPlanner(IEventBus modBus) {
         ITEMS.register(modBus);
         BLOCKS.register(modBus);
@@ -79,6 +84,7 @@ public final class TrackPlanner {
         var reg = e.registrar("1");
         reg.playToClient(BlueprintsPayload.TYPE, BlueprintsPayload.STREAM_CODEC, (p, ctx) -> BlueprintsPayload.receive(p));
         reg.playToServer(MapPlanRequest.TYPE, MapPlanRequest.STREAM_CODEC, MapPlanRequest::handle);
+        reg.playToServer(ToggleBuildRequest.TYPE, ToggleBuildRequest.STREAM_CODEC, ToggleBuildRequest::handle);
     }
 
     static void creativeTab(BuildCreativeModeTabContentsEvent e) {

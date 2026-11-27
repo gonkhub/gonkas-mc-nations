@@ -20,10 +20,17 @@ import java.util.List;
 /**
  * Right-click a block to start a line there (on an existing track, from that track), right-click the
  * destination to plan it. The plan is saved as a blueprint and shown to everyone as ghost track. Holding
- * the planner near your blueprint builds it piece by piece in survival (see SurvivalBuilder).
- * Sneak-right-click in the air forgets the start.
+ * the planner near your blueprint, with building switched on, builds it piece by piece in survival (see
+ * SurvivalBuilder). Building is off by default; the toggle key (B) or sneak-right-click in the air switches it.
+ * Sneak-right-click in the air with a start set forgets the start instead.
  */
 public final class RailPlannerItem extends Item {
+    /** The toggle key's current binding, on the client; "the toggle key" elsewhere. */
+    static String keyName() {
+        if (!net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) return "the toggle key";
+        return com.gonkhub.track_planner.client.PlannerKeys.TOGGLE_BUILD.getTranslatedKeyMessage().getString();
+    }
+
     public RailPlannerItem(Properties p) { super(p); }
 
     @Override
@@ -66,16 +73,38 @@ public final class RailPlannerItem extends Item {
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         }
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide) toggleBuilding(player, stack);
+            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        }
         return InteractionResultHolder.pass(stack);
     }
+
+    public static boolean building(ItemStack stack) {
+        return stack.is(TrackPlanner.RAIL_PLANNER.get()) && Boolean.TRUE.equals(stack.get(TrackPlanner.BUILDING.get()));
+    }
+
+    public static void toggleBuilding(Player player, ItemStack stack) {
+        boolean on = !building(stack);
+        if (on) stack.set(TrackPlanner.BUILDING.get(), true); else stack.remove(TrackPlanner.BUILDING.get());
+        player.displayClientMessage(Component.literal(on ? "Building on: hold the planner near your blueprint to build it."
+                : "Building off: the planner only plans.").withStyle(on ? ChatFormatting.AQUA : ChatFormatting.GRAY), true);
+    }
+
+    /** Glints while building is on. */
+    @Override
+    public boolean isFoil(ItemStack stack) { return building(stack) || super.isFoil(stack); }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
         BlockPos start = stack.get(TrackPlanner.PLAN_START.get());
         lines.add(Component.literal(start == null ? "Right-click where the line starts" : "Starts at " + start.toShortString() + "; right-click the destination")
                 .withStyle(ChatFormatting.GRAY));
-        lines.add(Component.literal("Sneak-right-click the air to clear the start").withStyle(ChatFormatting.DARK_GRAY));
-        lines.add(Component.literal("Hold it near your blueprint to build it, piece by piece,").withStyle(ChatFormatting.DARK_GRAY));
-        lines.add(Component.literal("with track and tools from your inventory").withStyle(ChatFormatting.DARK_GRAY));
+        lines.add(Component.literal(start != null ? "Sneak-right-click the air to clear the start" : "Sneak-right-click the air or press "
+                + keyName() + " to switch building").withStyle(ChatFormatting.DARK_GRAY));
+        lines.add(building(stack) ? Component.literal("Building ON: builds your blueprint within 8 blocks,").withStyle(ChatFormatting.AQUA)
+                : Component.literal("Building OFF: only plans").withStyle(ChatFormatting.GRAY));
+        if (building(stack))
+            lines.add(Component.literal("with track and tools from your inventory").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

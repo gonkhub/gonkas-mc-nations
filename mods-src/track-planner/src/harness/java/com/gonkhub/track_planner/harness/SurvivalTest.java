@@ -56,6 +56,15 @@ final class SurvivalTest {
         // load the line (a player walking along it would)
         for (var an : b.anchors()) level.getChunk(an.x() >> 4, an.z() >> 4);
 
+        // 0. the building switch on the planner: off when crafted, flipped by the toggle
+        ItemStack planner = new ItemStack(com.gonkhub.track_planner.TrackPlanner.RAIL_PLANNER.get());
+        boolean fresh = com.gonkhub.track_planner.RailPlannerItem.building(planner);
+        com.gonkhub.track_planner.RailPlannerItem.toggleBuilding(p, planner);
+        boolean on = com.gonkhub.track_planner.RailPlannerItem.building(planner);
+        com.gonkhub.track_planner.RailPlannerItem.toggleBuilding(p, planner);
+        log.println("planner building: new=" + fresh + ", toggled=" + on + ", toggled back=" + com.gonkhub.track_planner.RailPlannerItem.building(planner)
+                + "; reach " + SurvivalBuilder.REACH + " blocks");
+
         // 1. no track at all
         p.getInventory().clearContent();
         stand(p, b, 0);

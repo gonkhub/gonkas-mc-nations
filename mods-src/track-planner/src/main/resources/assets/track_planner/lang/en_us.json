@@ -1,4 +1,6 @@
 {
   "item.track_planner.rail_planner": "Rail Planner",
-  "block.track_planner.track_layer": "Track Layer"
+  "block.track_planner.track_layer": "Track Layer",
+  "key.categories.track_planner": "Track Planner",
+  "key.track_planner.toggle_build": "Toggle Rail Planner building"
 }
