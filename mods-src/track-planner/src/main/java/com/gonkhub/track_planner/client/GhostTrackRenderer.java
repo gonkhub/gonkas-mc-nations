@@ -7,7 +7,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simibubi.create.content.trains.track.BezierConnection;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -74,9 +73,17 @@ public final class GhostTrackRenderer {
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(RenderType.debugQuads());
-        double view2 = VIEW_DISTANCE * VIEW_DISTANCE;
+        // faint copy through terrain first, so the whole route (cuttings included) is always visible,
+        // then the bright copy wherever nothing is in front of it
+        draw(buffers.getBuffer(GhostRenderTypes.XRAY), m, cam, 0.35f);
+        buffers.endBatch(GhostRenderTypes.XRAY);
+        draw(buffers.getBuffer(GhostRenderTypes.SOLID), m, cam, 1f);
+        buffers.endBatch(GhostRenderTypes.SOLID);
+        pose.popPose();
+    }
 
+    static void draw(VertexConsumer vc, Matrix4f m, Vec3 cam, float alphaScale) {
+        double view2 = VIEW_DISTANCE * VIEW_DISTANCE;
         for (Line line : lines) {
             List<Vec3> p = line.points();
             double sinceSleeper = SLEEPER_STEP;
@@ -90,20 +97,18 @@ public final class GhostTrackRenderer {
                 Vec3 side = new Vec3(-dir.z, 0, dir.x).normalize();
                 for (int s = -1; s <= 1; s += 2) {
                     Vec3 o = side.scale(s * RAIL_OFFSET);
-                    strip(vc, m, a.add(o).add(0, RAIL_Y, 0), b.add(o).add(0, RAIL_Y, 0), side.scale(RAIL_HALF_WIDTH), 210);
+                    strip(vc, m, a.add(o).add(0, RAIL_Y, 0), b.add(o).add(0, RAIL_Y, 0), side.scale(RAIL_HALF_WIDTH), (int) (210 * alphaScale));
                 }
                 sinceSleeper += len;
                 while (sinceSleeper >= SLEEPER_STEP) {
                     sinceSleeper -= SLEEPER_STEP;
                     Vec3 c = b.subtract(dir.scale(sinceSleeper)).add(0, SLEEPER_Y, 0);
-                    strip(vc, m, c.subtract(side.scale(SLEEPER_HALF)), c.add(side.scale(SLEEPER_HALF)), dir.scale(0.13), 120);
+                    strip(vc, m, c.subtract(side.scale(SLEEPER_HALF)), c.add(side.scale(SLEEPER_HALF)), dir.scale(0.13), (int) (120 * alphaScale));
                 }
             }
             for (Vec3 endPoint : new Vec3[]{line.start(), line.end()})
-                if (endPoint.distanceToSqr(cam) < view2) beam(vc, m, endPoint);
+                if (endPoint.distanceToSqr(cam) < view2) beam(vc, m, endPoint, (int) (150 * alphaScale));
         }
-        buffers.endBatch(RenderType.debugQuads());
-        pose.popPose();
     }
 
     /** A flat quad from a to b, halfWidth to either side, drawn both ways round. */
@@ -114,13 +119,13 @@ public final class GhostTrackRenderer {
     }
 
     /** A thin vertical marker two blocks tall over a line end. */
-    static void beam(VertexConsumer vc, Matrix4f m, Vec3 at) {
+    static void beam(VertexConsumer vc, Matrix4f m, Vec3 at, int alpha) {
         double h = 0.12;
         Vec3 top = new Vec3(0, 2.5, 0);
         for (Vec3 side : new Vec3[]{new Vec3(h, 0, 0), new Vec3(0, 0, h)}) {
             Vec3 a1 = at.subtract(side), a2 = at.add(side);
-            quad(vc, m, a1, a2, a2.add(top), a1.add(top), 150);
-            quad(vc, m, a1.add(top), a2.add(top), a2, a1, 150);
+            quad(vc, m, a1, a2, a2.add(top), a1.add(top), alpha);
+            quad(vc, m, a1.add(top), a2.add(top), a2, a1, alpha);
         }
     }
 
