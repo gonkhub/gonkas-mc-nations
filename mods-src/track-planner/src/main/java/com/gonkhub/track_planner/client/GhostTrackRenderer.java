@@ -2,6 +2,7 @@ package com.gonkhub.track_planner.client;
 
 import com.gonkhub.track_planner.BlueprintsPayload;
 import com.gonkhub.track_planner.TrackPlanner;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simibubi.create.content.trains.track.BezierConnection;
@@ -76,7 +77,10 @@ public final class GhostTrackRenderer {
         // faint copy through terrain first, so the whole route (cuttings included) is always visible,
         // then the bright copy wherever nothing is in front of it
         draw(buffers.getBuffer(GhostRenderTypes.XRAY), m, cam, 0.35f);
+        // vanilla's "always" depth state only works where depth testing is already off; it is on here
+        RenderSystem.disableDepthTest();
         buffers.endBatch(GhostRenderTypes.XRAY);
+        RenderSystem.enableDepthTest();
         draw(buffers.getBuffer(GhostRenderTypes.SOLID), m, cam, 1f);
         buffers.endBatch(GhostRenderTypes.SOLID);
         pose.popPose();
