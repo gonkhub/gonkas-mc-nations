@@ -17,6 +17,12 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- **Orders from the Imports tab now fill.** An order ships right away, whatever the amount,
+  from the nearest colony that has the goods at its Caravan Station. If none does, the nearest
+  colony whose Warehouse holds them fetches them to its Station and sends them on. Each order
+  now says why it is waiting: on its way, being fetched, not enough colony money, over your
+  max price, or nobody you can reach has any.
+- The station window updates as soon as you place or cancel an order.
 - **Windmills turn faster the higher you build them.** No bonus at sea level, rising to double
   speed (and double stress capacity) at the top of the world. Existing windmills pick it up the
   next time they are stopped and started.
