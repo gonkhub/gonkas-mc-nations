@@ -5,7 +5,7 @@
 # thee 1.0.0 has shipped as at least four DIFFERENT builds all stamped 1.0.0.
 # The 434300-byte build has no Mechanical Broker. This one does (35 entries).
 # A client/server mismatch here is a hard connect failure, not a soft degrade.
-f3f32e6cfe4dab58bd62f1c8568c8febdf1ac76d *minecraft/mods/thee-1.51.1.jar
+98531ab0355585cd7af59a0aad60d5039b97e93f *minecraft/mods/thee-1.52.0.jar
 46e4b29fc6de34963d6f519c8777a16c4509bd99 *minecraft/mods/chaosgate-1.0.0.jar
 b3cc87cde3a2bc841e2305b706e4eb7666d8cacc *minecraft/mods/omnifix-1.10.0.jar
 26264512098f1b10177669338bab21bbb09ba578 *minecraft/mods/atlas-1.5.0.jar
