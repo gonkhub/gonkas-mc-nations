@@ -17,7 +17,19 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **New tabs in the Caravan Station.**
+  - **Shipments:** everything coming in or going out, what it's doing right now (packing,
+    on the road, waiting for a train or boat, held at a colony on the way) and when it arrives.
+  - **Network:** every colony you can trade with, how far, which colonies the goods pass
+    through, whether by road, rail or water, and what each one sells.
+  - **Exports** (was Minimum Stock): your own amounts plus what the station sells on its own,
+    with an On/Off switch per item for the automatic ones.
+  - **Imports:** order goods from anywhere on your network. You see the nearest seller and the
+    estimated cost before you place the order, and you can set a maximum price per item. Below
+    it, what your colony is asking for on its own and how much of it is on the way.
+- **Trade routes on the world map.** Roads, railways and water routes between colonies are
+  drawn on Xaero's world map, and your colony's caravans and boats show where they are, what
+  they carry and when they arrive. Other colonies' shipments stay private.
 
 
 ## 0.11.0 - 2026-11-26
