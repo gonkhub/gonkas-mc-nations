@@ -82,6 +82,8 @@ public final class Harness {
                 st.corridorMs, st.corridorCells, st.prefetchMs, st.prefetchChunks, st.routeMs, st.nodesExpanded, st.profileMs,
                 st.realColumns, st.noiseColumns, st.estimatedColumns, st.maxPlacement);
         if (st.failure != null) { log.println("FAILED: " + st.failure); return; }
+        log.printf("valleys: %d route passes, kept pass %d; points floating more than %d blocks: %d on the first pass, %d on the kept plan%n",
+                st.passes, st.chosenPass, w.comfortLift, st.highFloatFirst, st.highFloat);
         List<Anchor> an = plan.anchors();
         List<Move> mv = plan.moves();
         double len = mv.stream().mapToDouble(Move::length).sum();

@@ -29,6 +29,10 @@ public final class Planner {
         /** per block of track over water, on top of lift above the lowest allowed height */
         public double overWater = 1.0;
         public double cut = 0.5, tunnel = 4.0, climb = 2.0, goalHeight = 2.0;
+        /** floating up to this many blocks is fine; past it each extra block costs liftSteep more, and the
+         *  route search is rerun with such valleys marked (valley per block of track) to look for a way round */
+        public int comfortLift = 5, valleyPasses = 3;
+        public double liftSteep = 2.0, valley = 6.0;
         /** blocks cleared above the rails for trains; a cutting deeper than this is priced as a tunnel */
         public int clearance = 5;
     }
@@ -43,6 +47,8 @@ public final class Planner {
     public static final class Stats {
         public long corridorMs, prefetchMs, routeMs, profileMs;
         public int corridorCells, prefetchChunks, nodesExpanded, realColumns, noiseColumns, estimatedColumns, maxPlacement;
+        /** route passes run, the pass whose plan was kept, and sampled points floating past comfortLift */
+        public int passes, chosenPass, highFloatFirst, highFloat;
         public String failure;
     }
 
@@ -52,6 +58,8 @@ public final class Planner {
     private final Terrain terrain;
     private final Terrain cheap;
     private final Weights w;
+    /** per column: extra route cost for valleys the line had to float high over in an earlier pass */
+    private final Long2DoubleOpenHashMap valley = new Long2DoubleOpenHashMap();
 
     public Planner(ServerLevel level, Terrain.Mode mode, Weights weights) {
         this.level = level;
@@ -120,8 +128,8 @@ public final class Planner {
         int maxLen = com.simibubi.create.infrastructure.config.AllConfigs.server().trains.maxTrackPlacementLength.get();
         st.maxPlacement = maxLen;
 
-        // ---- stage 1: horizontal route ----
-        long t1 = System.nanoTime();
+        // ---- stages 1 and 2, repeated: a line that has to float high over a valley marks that valley
+        // expensive and the route is searched again, so it can go round when going round is cheaper ----
         final int fcx0 = cx0, fcz0 = cz0, fch = ch, fcw = cw;
         java.util.function.ToDoubleBiFunction<Integer, Integer> h = (x, z) -> {
             double dx = Math.abs(x - gx), dz = Math.abs(z - gz);
@@ -130,6 +138,56 @@ public final class Planner {
             double coarse = ci >= 0 && cj >= 0 && ci < fcw && cj < fch ? togo[ci * fch + cj] * 0.9 : 0;
             return Math.max(octile, coarse);
         };
+        valley.clear();
+        Plan bestPlan = null;
+        double bestTotal = Double.POSITIVE_INFINITY;
+        for (int pass = 0; pass < w.valleyPasses; pass++) {
+            Plan p = attempt(start, startDir, goal, cx0, cz0, cw, ch, band, h, maxLen, st);
+            if (p == null) break;
+            st.passes = pass + 1;
+            // compare passes on the same terms: the line's own cost plus its height profile, no valley marks
+            double total = p.cost();
+            for (int i = 0; i < p.moves().size(); i++) total += routeCost(p.anchors().get(i).x(), p.anchors().get(i).z(), p.moves().get(i), false);
+            int high = highFloat(p, true);
+            if (pass == 0) st.highFloatFirst = high;
+            if (total < bestTotal) { bestTotal = total; bestPlan = p; st.highFloat = high; st.chosenPass = pass + 1; }
+            if (high == 0) break;
+        }
+        st.realColumns = terrain.realColumns;
+        st.noiseColumns = terrain.noiseColumns;
+        st.estimatedColumns = terrain.estimatedColumns + (cheap != terrain ? cheap.estimatedColumns : 0);
+        if (bestPlan == null) {
+            if (st.failure == null) st.failure = "no route found";
+            return new Plan(List.of(), List.of(), goal, Double.POSITIVE_INFINITY, st);
+        }
+        return bestPlan;
+    }
+
+    /** Columns where the line floats more than comfortLift above dry ground; mark = also mark them for the next pass. */
+    private int highFloat(Plan p, boolean mark) {
+        int count = 0;
+        for (int i = 0; i < p.moves().size(); i++) {
+            Anchor a = p.anchors().get(i), b = p.anchors().get(i + 1);
+            int[][] s = p.moves().get(i).samples();
+            for (int j = 0; j < s.length; j++) {
+                int x = a.x() + s[j][0], z = a.z() + s[j][1];
+                if (terrain.wet(x, z)) continue;
+                double ty = a.y() + (b.y() - a.y()) * (j + 1) / (double) s.length;
+                if (ty - 1 - terrain.ground(x, z) <= w.comfortLift) continue;
+                count++;
+                if (mark)
+                    for (int ox = -3; ox <= 3; ox++) for (int oz = -3; oz <= 3; oz++)
+                        valley.put(net.minecraft.world.level.ChunkPos.asLong(x + ox, z + oz), w.valley);
+            }
+        }
+        return count;
+    }
+
+    /** One pass of stage 1 (route, avoiding marked valleys) and stage 2 (heights). Null when nothing fits. */
+    private Plan attempt(BlockPos start, int startDir, BlockPos goal, int cx0, int cz0, int cw, int ch, boolean[] band,
+                         java.util.function.ToDoubleBiFunction<Integer, Integer> h, int maxLen, Stats st) {
+        int sx = start.getX(), sz = start.getZ(), gx = goal.getX(), gz = goal.getZ();
+        long t1 = System.nanoTime();
         Long2DoubleOpenHashMap best = new Long2DoubleOpenHashMap();
         best.defaultReturnValue(Double.POSITIVE_INFINITY);
         Long2ObjectOpenHashMap<long[]> came = new Long2ObjectOpenHashMap<>();
@@ -140,14 +198,15 @@ public final class Planner {
             open.add(new double[]{h.applyAsDouble(sx, sz), 0, sx, sz, d});
         }
         double[] goalNode = null;
+        int expanded = 0;
         while (!open.isEmpty()) {
             double[] e = open.poll();
             int x = (int) e[2], z = (int) e[3], d = (int) e[4];
             long k = key(x, z, d, sx, sz);
             if (e[1] > best.get(k)) continue;
-            st.nodesExpanded++;
+            expanded++;
             if (Math.abs(x - gx) <= 4 && Math.abs(z - gz) <= 4) { goalNode = e; break; }
-            if (st.nodesExpanded > 2_000_000) break;
+            if (expanded > 2_000_000) break;
             List<Move> moves = Moves.MOVES.get(d);
             for (int mi = 0; mi < moves.size(); mi++) {
                 Move m = moves.get(mi);
@@ -155,7 +214,7 @@ public final class Planner {
                 int nx = x + m.dx(), nz = z + m.dz();
                 int ci = Math.floorDiv(nx, CELL) - cx0, cj = Math.floorDiv(nz, CELL) - cz0;
                 if (ci < 0 || cj < 0 || ci >= cw || cj >= ch || !band[ci * ch + cj]) continue;
-                double ng = e[1] + routeCost(x, z, m);
+                double ng = e[1] + routeCost(x, z, m, true);
                 long nk = key(nx, nz, m.endDir(), sx, sz);
                 if (ng < best.get(nk)) {
                     best.put(nk, ng);
@@ -164,10 +223,11 @@ public final class Planner {
                 }
             }
         }
-        st.routeMs = (System.nanoTime() - t1) / 1_000_000;
+        st.nodesExpanded += expanded;
+        st.routeMs += (System.nanoTime() - t1) / 1_000_000;
         if (goalNode == null) {
-            st.failure = "no route found (" + st.nodesExpanded + " nodes)";
-            return new Plan(List.of(), List.of(), goal, Double.POSITIVE_INFINITY, st);
+            st.failure = "no route found (" + expanded + " nodes)";
+            return null;
         }
         List<int[]> xz = new ArrayList<>();
         List<Move> moves = new ArrayList<>();
@@ -182,7 +242,7 @@ public final class Planner {
         Collections.reverse(xz);
         Collections.reverse(moves);
 
-        // ---- stage 2: height profile ----
+        // stage 2: height profile
         long t2 = System.nanoTime();
         int n = xz.size();
         int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE;
@@ -214,13 +274,10 @@ public final class Planner {
             double c = dp[n - 1][y] + Math.abs(y + lo - goal.getY()) * w.goalHeight;
             if (c < bc) { bc = c; by = y; }
         }
-        st.profileMs = (System.nanoTime() - t2) / 1_000_000;
-        st.realColumns = terrain.realColumns;
-        st.noiseColumns = terrain.noiseColumns;
-        st.estimatedColumns = terrain.estimatedColumns + (cheap != terrain ? cheap.estimatedColumns : 0);
+        st.profileMs += (System.nanoTime() - t2) / 1_000_000;
         if (by < 0) {
             st.failure = "no height profile fits this route";
-            return new Plan(List.of(), List.of(), goal, Double.POSITIVE_INFINITY, st);
+            return null;
         }
         int[] ys = new int[n];
         ys[n - 1] = by;
@@ -235,7 +292,7 @@ public final class Planner {
     }
 
     /** Stage 1 cost: length, curves, every block of ground the line would climb or drop, water crossed. */
-    private double routeCost(int x, int z, Move m) {
+    private double routeCost(int x, int z, Move m, boolean withValleys) {
         double c = m.length() * w.track + (m.kind() != Moves.Kind.STRAIGHT ? w.turn : 0);
         int prev = terrain.surface(x, z);
         double step = m.length() / m.samples().length;
@@ -244,6 +301,7 @@ public final class Planner {
             int g = terrain.surface(sx, sz);
             c += Math.abs(g - prev) * w.rough;
             if (terrain.wet(sx, sz)) c += step * w.water;
+            if (withValleys && !valley.isEmpty()) c += step * valley.get(net.minecraft.world.level.ChunkPos.asLong(sx, sz));
             prev = g;
         }
         return c;
@@ -268,7 +326,7 @@ public final class Planner {
                 if (ty < water + 1) return Double.POSITIVE_INFINITY;
                 c += step * (w.overWater + (ty - water - 1) * w.lift);
             } else if (above > 0) {
-                c += step * above * w.lift;
+                c += step * (above * w.lift + Math.max(0, above - w.comfortLift) * w.liftSteep);
             } else if (above < 0) {
                 double depth = -above;
                 c += step * (depth <= w.clearance ? depth * w.cut : w.tunnel + w.clearance * w.cut);
