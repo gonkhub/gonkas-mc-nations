@@ -17,8 +17,18 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
-
+- **New worker: the Station Hand.** Hire up to two at each Caravan Station. They do all the
+  carrying there: export goods from the Warehouse to the station, imports from the station to
+  the Warehouse, food for caravans getting ready to leave, and cargo between the station and
+  its train platform. Couriers no longer go to the Caravan Station at all, so **a station needs
+  a Station Hand to move goods to and from your Warehouse.**
+- **Trains are unloaded and loaded by hand.** With Station Hands working, a train's cargo is set
+  down on the platform and carried into the station a stack at a time, and outgoing goods are
+  carried out to wait for the next train. When nobody is around, trains still trade on their own.
+- **The Foremen's Hut can no longer be crafted.** Colony-to-colony trade now goes only through
+  Caravan Stations. Foremen's Huts already built keep working; the Freight Depot is unchanged.
+- Automatic exports now read your Warehouse correctly; they were counting some items two or
+  three times.
 
 ## 0.12.1 - 2026-11-26
 
