@@ -35,7 +35,7 @@ import java.util.*;
 public final class Harness {
     static final Path OUT = Path.of("harness-out");
     static PrintWriter log;
-    static final List<Runnable> later = new ArrayList<>();
+    public static final List<Runnable> later = new ArrayList<>();
     static int ticks;
 
     /** Offsets from world spawn. map = also write a before-heightmap of the area for plotting. */
@@ -44,6 +44,8 @@ public final class Harness {
         boolean blueprint() { return name.startsWith("b"); }
         /** a* cases plan in the background while the server ticks, then build the blueprint */
         boolean async() { return name.startsWith("a"); }
+        /** s* cases build the blueprint the survival way, with a test player walking along it */
+        boolean survival() { return name.startsWith("s"); }
     }
 
     static final List<Case> CASES = List.of(
@@ -52,7 +54,8 @@ public final class Harness {
             new Case("c3_autotrack_case6", -300, -300, -1300, -1100, false),
             new Case("c4_3km", 300, 300, 2800, 1900, false),
             new Case("b1_blueprint", -20, -20, -260, 140, true),
-            new Case("a4_async_3km", 300, 300, 2800, 1900, false));
+            new Case("a4_async_3km", 300, 300, 2800, 1900, false),
+            new Case("s1_survival", -60, 220, -330, 420, false));
 
     @SubscribeEvent
     static void started(ServerStartedEvent e) throws Exception {
@@ -62,11 +65,19 @@ public final class Harness {
         ServerLevel level = e.getServer().overworld();
         BlockPos spawn = level.getSharedSpawnPos();
         log.println("seed " + level.getSeed() + ", spawn " + spawn.toShortString());
+        var recipe = e.getServer().getRecipeManager().byKey(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("track_planner", "rail_planner"));
+        log.println("Rail Planner recipe loaded: " + recipe.isPresent() + recipe.map(r -> " (" + r.value().getType() + ", makes "
+                + r.value().getResultItem(level.registryAccess()).getHoverName().getString() + ")").orElse(""));
         if (Boolean.getBoolean("track_planner.inspectOnly")) { inspectWorld(level); return; }
         String only = System.getProperty("track_planner.cases", "");
         for (Case c : CASES) {
             if (!only.isEmpty() && !Arrays.asList(only.split(",")).contains(c.name())) continue;
             if (c.async()) { startAsync(level, spawn, c); continue; }
+            if (c.survival()) {
+                try { SurvivalTest.run(level, spawn, c.name(), c.sx(), c.sz(), c.gx(), c.gz(), log); }
+                catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
+                continue;
+            }
             try { run(level, spawn, c); }
             catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
         }
@@ -137,8 +148,7 @@ public final class Harness {
         // ---- build (b* cases: through a blueprint saved and loaded back, as a player's would be) ----
         Builder.Result r;
         if (c.blueprint()) {
-            com.gonkhub.track_planner.Blueprint bp = com.gonkhub.track_planner.Blueprint.of(
-                    com.gonkhub.track_planner.Blueprints.get(level.getServer()).nextId(), "harness", plan, start);
+            com.gonkhub.track_planner.Blueprint bp = com.gonkhub.track_planner.Blueprint.of(com.gonkhub.track_planner.Blueprints.get(level.getServer()).nextId(), "harness", null, plan, start);
             com.gonkhub.track_planner.Blueprints.get(level.getServer()).add(level.getServer(), bp);
             var loaded = com.gonkhub.track_planner.Blueprint.load(bp.save());
             boolean same = loaded.anchors().equals(plan.anchors()) && loaded.moves().equals(plan.moves())
@@ -169,7 +179,7 @@ public final class Harness {
      * nothing solid above it. Curves: Create's own curve, sampled every quarter block, must have nothing
      * solid or wet at rail height. Also reports how high the line floats above the ground.
      */
-    static void inspect(ServerLevel level, Planner.Plan plan, Terrain real) {
+    public static void inspect(ServerLevel level, Planner.Plan plan, Terrain real) {
         List<Anchor> an = plan.anchors();
         int straightBlocks = 0, gaps = 0, buriedStraight = 0, curveSamples = 0, buriedCurve = 0, wet = 0;
         List<String> examples = new ArrayList<>();
@@ -302,7 +312,7 @@ public final class Harness {
         log = null;
     }
 
-    static void graphCheck(String name, Vec3 a, Vec3 b, double planned) {
+    public static void graphCheck(String name, Vec3 a, Vec3 b, double planned) {
         log.println("\n--- track network check: " + name);
         TrackNode na = null, nb = null;
         TrackGraph ga = null, gb = null;

@@ -19,8 +19,9 @@ import java.util.List;
 
 /**
  * Right-click a block to start a line there (on an existing track, from that track), right-click the
- * destination to plan it. The plan is saved as a blueprint and shown to everyone as ghost track; nothing
- * is built until someone runs /trackplan build. Sneak-right-click in the air forgets the start.
+ * destination to plan it. The plan is saved as a blueprint and shown to everyone as ghost track. Holding
+ * the planner near your blueprint builds it piece by piece in survival (see SurvivalBuilder).
+ * Sneak-right-click in the air forgets the start.
  */
 public final class RailPlannerItem extends Item {
     public RailPlannerItem(Properties p) { super(p); }
@@ -74,5 +75,7 @@ public final class RailPlannerItem extends Item {
         lines.add(Component.literal(start == null ? "Right-click where the line starts" : "Starts at " + start.toShortString() + "; right-click the destination")
                 .withStyle(ChatFormatting.GRAY));
         lines.add(Component.literal("Sneak-right-click the air to clear the start").withStyle(ChatFormatting.DARK_GRAY));
+        lines.add(Component.literal("Hold it near your blueprint to build it, piece by piece,").withStyle(ChatFormatting.DARK_GRAY));
+        lines.add(Component.literal("with track and tools from your inventory").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

@@ -77,18 +77,19 @@ public final class TrackPlanner {
     public static Blueprint planBlueprint(ServerLevel level, BlockPos start, int startDirs, BlockPos goal, String owner, Consumer<Component> report) {
         long t0 = System.nanoTime();
         Planner.Plan plan = new Planner(level, Terrain.Mode.PREFETCH, new Planner.Weights()).plan(start, startDirs, goal);
-        return saveBlueprint(level, plan, start, goal, owner, (System.nanoTime() - t0) / 1e9, report);
+        return saveBlueprint(level, plan, start, goal, owner, null, (System.nanoTime() - t0) / 1e9, report);
     }
 
     /** Saves a finished plan as a blueprint and reports it. Server thread only. Null when the plan failed. */
-    static Blueprint saveBlueprint(ServerLevel level, Planner.Plan plan, BlockPos start, BlockPos goal, String owner, double seconds, Consumer<Component> report) {
+    static Blueprint saveBlueprint(ServerLevel level, Planner.Plan plan, BlockPos start, BlockPos goal, String owner, java.util.UUID ownerId,
+                                   double seconds, Consumer<Component> report) {
         var st = plan.stats();
         if (st.failure != null) {
             report.accept(Component.literal("Track Planner: " + st.failure).withStyle(ChatFormatting.RED));
             return null;
         }
         Blueprints all = Blueprints.get(level.getServer());
-        Blueprint b = Blueprint.of(all.nextId(), owner, plan, start);
+        Blueprint b = Blueprint.of(all.nextId(), owner, ownerId, plan, start);
         all.add(level.getServer(), b);
         Planner.Anchor end = plan.anchors().get(plan.anchors().size() - 1);
         report.accept(Component.literal(String.format(
@@ -116,8 +117,9 @@ public final class TrackPlanner {
     }
 
     static void commands(RegisterCommandsEvent e) {
-        e.getDispatcher().register(Commands.literal("trackplan").requires(s -> s.hasPermission(2))
-                .then(Commands.argument("from", BlockPosArgument.blockPos())
+        // anyone: list, remove their own. Ops: plan from coordinates, build instantly, remove anyone's or all.
+        e.getDispatcher().register(Commands.literal("trackplan")
+                .then(Commands.argument("from", BlockPosArgument.blockPos()).requires(s -> s.hasPermission(2))
                         .then(Commands.argument("to", BlockPosArgument.blockPos())
                                 .executes(c -> {
                                     BlockPos from = BlockPosArgument.getLoadedBlockPos(c, "from"), to = BlockPosArgument.getBlockPos(c, "to");
@@ -129,20 +131,28 @@ public final class TrackPlanner {
                                     return 1;
                                 })))
                 .then(Commands.literal("blueprints").executes(TrackPlanner::list))
-                .then(Commands.literal("build")
+                .then(Commands.literal("build").requires(s -> s.hasPermission(2))
                         .then(Commands.literal("last").executes(c -> build(c, -1)))
                         .then(Commands.argument("id", IntegerArgumentType.integer(1)).executes(c -> build(c, IntegerArgumentType.getInteger(c, "id")))))
                 .then(Commands.literal("remove")
-                        .then(Commands.literal("all").executes(c -> {
+                        .then(Commands.literal("all").requires(s -> s.hasPermission(2)).executes(c -> {
                             Blueprints.get(c.getSource().getServer()).clear(c.getSource().getServer());
                             c.getSource().sendSuccess(() -> Component.literal("All blueprints removed."), true);
                             return 1;
                         }))
                         .then(Commands.argument("id", IntegerArgumentType.integer(1)).executes(c -> {
                             int id = IntegerArgumentType.getInteger(c, "id");
-                            boolean ok = Blueprints.get(c.getSource().getServer()).remove(c.getSource().getServer(), id);
-                            c.getSource().sendSuccess(() -> Component.literal(ok ? "Blueprint #" + id + " removed." : "No blueprint #" + id + "."), true);
-                            return ok ? 1 : 0;
+                            Blueprints all = Blueprints.get(c.getSource().getServer());
+                            Blueprint b = all.byId(id);
+                            if (b == null) { c.getSource().sendFailure(Component.literal("No blueprint #" + id + ".")); return 0; }
+                            ServerPlayer p = c.getSource().getPlayer();
+                            if (p != null && !b.mayManage(p)) {
+                                c.getSource().sendFailure(Component.literal("Blueprint #" + id + " is " + b.owner() + "'s."));
+                                return 0;
+                            }
+                            all.remove(c.getSource().getServer(), id);
+                            c.getSource().sendSuccess(() -> Component.literal("Blueprint #" + id + " removed."), true);
+                            return 1;
                         }))));
     }
 
@@ -150,8 +160,9 @@ public final class TrackPlanner {
         var all = Blueprints.get(c.getSource().getServer()).all();
         if (all.isEmpty()) c.getSource().sendSuccess(() -> Component.literal("No blueprints."), false);
         for (Blueprint b : all)
-            c.getSource().sendSuccess(() -> Component.literal(String.format("#%d by %s: %s to %s, %.0f blocks, about %d track items",
-                    b.id(), b.owner(), b.start().toShortString(), b.goal().toShortString(), b.length(), b.trackItems())), false);
+            c.getSource().sendSuccess(() -> Component.literal(String.format("#%d by %s: %s to %s, %.0f blocks, about %d track items, %d of %d pieces built",
+                    b.id(), b.owner(), b.start().toShortString(), b.goal().toShortString(), b.length(), b.trackItems(),
+                    b.built().cardinality(), b.moves().size())), false);
         return all.size();
     }
 

@@ -32,7 +32,8 @@ public final class GhostTrackRenderer {
     static final double VIEW_DISTANCE = 192;
 
     /** One planned line: points along the rails (at the track bed), its two ends, and what to label it with. */
-    public record Line(int id, String owner, double length, int trackItems, List<Vec3> points, Vec3 start, Vec3 end) {}
+    /** builtSeg: segment i (points i to i+1) is already built, so it is real track now and not drawn. */
+    public record Line(int id, String owner, double length, int trackItems, List<Vec3> points, java.util.BitSet builtSeg, Vec3 start, Vec3 end) {}
 
     /** The current blueprints as lines, rebuilt when a new set arrives. Also used by the world map overlay. */
     public static List<Line> lines() {
@@ -47,8 +48,14 @@ public final class GhostTrackRenderer {
         List<Line> out = new ArrayList<>();
         for (Tag bt : BlueprintsPayload.latest.getList("blueprints", Tag.TAG_COMPOUND)) {
             List<Vec3> pts = new ArrayList<>();
+            java.util.BitSet builtSeg = new java.util.BitSet();
+            boolean prevBuilt = false;
             for (Tag pt : ((CompoundTag) bt).getList("pieces", Tag.TAG_COMPOUND)) {
                 CompoundTag piece = (CompoundTag) pt;
+                boolean built = piece.getBoolean("built");
+                // the joint from the previous piece counts as built only if both sides are
+                if (!pts.isEmpty() && built && prevBuilt) builtSeg.set(pts.size() - 1);
+                int from = pts.size();
                 if (piece.getString("type").equals("straight")) {
                     int[] a = piece.getIntArray("from"), b = piece.getIntArray("to");
                     Vec3 va = Vec3.atBottomCenterOf(new BlockPos(a[0], a[1], a[2])), vb = Vec3.atBottomCenterOf(new BlockPos(b[0], b[1], b[2]));
@@ -62,10 +69,12 @@ public final class GhostTrackRenderer {
                     for (int i = 0; i <= n; i++) pts.add(bc.getPosition(i / (double) n));
                     pts.add(Vec3.atBottomCenterOf(bc.bePositions.getSecond()));
                 }
+                if (built) builtSeg.set(from, pts.size() - 1);
+                prevBuilt = built;
             }
             CompoundTag bp = (CompoundTag) bt;
             if (pts.size() >= 2)
-                out.add(new Line(bp.getInt("id"), bp.getString("owner"), bp.getDouble("length"), bp.getInt("trackItems"), pts, pts.get(0), pts.get(pts.size() - 1)));
+                out.add(new Line(bp.getInt("id"), bp.getString("owner"), bp.getDouble("length"), bp.getInt("trackItems"), pts, builtSeg, pts.get(0), pts.get(pts.size() - 1)));
         }
         lines = out;
     }
@@ -99,6 +108,7 @@ public final class GhostTrackRenderer {
             List<Vec3> p = line.points();
             double sinceSleeper = SLEEPER_STEP;
             for (int i = 0; i + 1 < p.size(); i++) {
+                if (line.builtSeg().get(i)) continue;
                 Vec3 a = p.get(i), b = p.get(i + 1);
                 if (a.distanceToSqr(cam) > view2) continue;
                 Vec3 d = b.subtract(a);

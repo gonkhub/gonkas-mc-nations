@@ -63,10 +63,10 @@ public final class XaeroMapOverlay {
             float px = pass == 0 ? EDGE_PX : LINE_PX;
             int color = pass == 0 ? EDGE : LINE;
             for (GhostTrackRenderer.Line line : lines) {
-                List<float[]> sp = screenPoints(line.points(), camX, camZ, s, cx, cz, screen.width, screen.height);
+                List<float[]> sp = screenPoints(line.points(), line.builtSeg(), camX, camZ, s, cx, cz, screen.width, screen.height);
                 for (int i = 0; i + 1 < sp.size(); i++) {
                     float[] a = sp.get(i), b = sp.get(i + 1);
-                    if (a == null || b == null) continue;
+                    if (a == null || b == null || a[2] != 0) continue;   // a[2]: the stretch from a is already built
                     segment(vc, m, a[0], a[1], b[0], b[1], px, color);
                     if (pass == 1) {
                         double d = distance(mouseX, mouseY, a[0], a[1], b[0], b[1]);
@@ -138,18 +138,23 @@ public final class XaeroMapOverlay {
         return f;
     }
 
-    /** Line points in screen pixels, thinned to roughly one per two pixels; null where far off screen. */
-    static List<float[]> screenPoints(List<Vec3> pts, double camX, double camZ, double s, double cx, double cz, int w, int h) {
+    /**
+     * Line points in screen pixels, thinned to roughly one per two pixels; null where far off screen.
+     * Each is {x, y, built}: built is 1 when the stretch from this point to the next is already built.
+     */
+    static List<float[]> screenPoints(List<Vec3> pts, java.util.BitSet builtSeg, double camX, double camZ, double s, double cx, double cz, int w, int h) {
         List<float[]> out = new ArrayList<>();
         float lastX = Float.NaN, lastZ = Float.NaN;
+        boolean lastBuilt = false;
         for (int i = 0; i < pts.size(); i++) {
             Vec3 p = pts.get(i);
             float x = (float) ((p.x - camX) * s + cx), z = (float) ((p.z - camZ) * s + cz);
-            boolean last = i == pts.size() - 1;
-            if (!last && !Float.isNaN(lastX) && Math.abs(x - lastX) + Math.abs(z - lastZ) < 2) continue;
+            boolean last = i == pts.size() - 1, built = builtSeg.get(i);
+            // keep every point where built/unbuilt changes, so the drawn stretch stops where the real track starts
+            if (!last && built == lastBuilt && !Float.isNaN(lastX) && Math.abs(x - lastX) + Math.abs(z - lastZ) < 2) continue;
             boolean visible = x > -w && z > -h && x < 2 * w && z < 2 * h;
-            out.add(visible ? new float[]{x, z} : null);
-            lastX = x; lastZ = z;
+            out.add(visible ? new float[]{x, z, built ? 1 : 0} : null);
+            lastX = x; lastZ = z; lastBuilt = built;
         }
         return out;
     }

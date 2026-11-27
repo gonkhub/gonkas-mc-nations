@@ -91,7 +91,7 @@ public final class PlanJobs {
                 double seconds = (System.nanoTime() - t0) / 1e9;
                 server.execute(() -> {
                     running.remove(job);
-                    done.complete(TrackPlanner.saveBlueprint(level, plan, e.start(), e.goal(), owner, seconds, report));
+                    done.complete(TrackPlanner.saveBlueprint(level, plan, e.start(), e.goal(), owner, requester, seconds, report));
                 });
             } catch (Throwable ex) {
                 LogUtils.getLogger().error("Track Planner: planning failed", ex);

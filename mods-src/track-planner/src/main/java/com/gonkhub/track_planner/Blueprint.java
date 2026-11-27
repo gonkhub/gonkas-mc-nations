@@ -14,21 +14,36 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.UUID;
 import java.util.List;
 
 /**
- * A planned line that has not been built: the plan itself (to build it later) plus the pieces a client
- * needs to draw it as ghost track. Pieces are what Create would lay: level straights as one run, every
- * curve or slope as the Bezier curve Create's own placement makes between the same two track blocks.
+ * A planned line that has not been (fully) built: the plan itself, who planned it, which of its pieces
+ * (one per move) are already built, and what a client needs to draw the rest as ghost track. Pieces are
+ * what Create would lay: a level straight as a run of track blocks, every curve or slope as the Bezier
+ * curve Create's own placement makes between the same two track blocks.
+ *
+ * @param ownerId who planned it (null when planned from the console); only they or an op may build or remove it
+ * @param built   which moves are built; mutable, changed only on the server thread through Blueprints
  */
-public record Blueprint(int id, String owner, BlockPos start, BlockPos goal, List<Anchor> anchors, List<Move> moves,
-                        double length, int trackItems) {
+public record Blueprint(int id, String owner, UUID ownerId, BlockPos start, BlockPos goal, List<Anchor> anchors, List<Move> moves,
+                        double length, int trackItems, BitSet built) {
+
+    public boolean isBuilt(int move) { return built.get(move); }
+
+    public boolean complete() { return built.cardinality() >= moves.size(); }
+
+    /** The owner, or anyone allowed to run op commands. */
+    public boolean mayManage(net.minecraft.server.level.ServerPlayer p) {
+        return p.hasPermissions(2) || ownerId != null && ownerId.equals(p.getUUID());
+    }
 
     public Plan plan() {
         return new Plan(anchors, moves, goal, 0, new Planner.Stats());
     }
 
-    public static Blueprint of(int id, String owner, Plan plan, BlockPos start) {
+    public static Blueprint of(int id, String owner, UUID ownerId, Plan plan, BlockPos start) {
         double length = plan.moves().stream().mapToDouble(Move::length).sum();
         int items = 0;
         for (CompoundTag piece : pieces(plan.anchors(), plan.moves())) {
@@ -39,30 +54,22 @@ public record Blueprint(int id, String owner, BlockPos start, BlockPos goal, Lis
                 items += Math.max(Math.abs(b[0] - a[0]), Math.abs(b[2] - a[2]));
             }
         }
-        return new Blueprint(id, owner, start, plan.goal(), plan.anchors(), plan.moves(), length, items);
+        return new Blueprint(id, owner, ownerId, start, plan.goal(), plan.anchors(), plan.moves(), length, items, new BitSet());
     }
 
-    /** Level straights on one heading become one run; everything else is a curve as Create would lay it. */
+    /** One piece per move: a level straight as a run of track blocks, anything else as the curve Create would lay. */
     public static List<CompoundTag> pieces(List<Anchor> anchors, List<Move> moves) {
         List<CompoundTag> out = new ArrayList<>();
-        int i = 0;
-        while (i < moves.size()) {
-            Anchor a = anchors.get(i);
+        for (int i = 0; i < moves.size(); i++) {
+            Anchor a = anchors.get(i), b = anchors.get(i + 1);
             CompoundTag piece = new CompoundTag();
-            if (isLevelStraight(moves.get(i), a, anchors.get(i + 1))) {
-                int j = i;
-                while (j + 1 < moves.size() && moves.get(j + 1).dir() == moves.get(i).dir()
-                        && isLevelStraight(moves.get(j + 1), anchors.get(j + 1), anchors.get(j + 2)))
-                    j++;
-                Anchor b = anchors.get(j + 1);
+            if (isLevelStraight(moves.get(i), a, b)) {
                 piece.putString("type", "straight");
                 piece.putIntArray("from", new int[]{a.x(), a.y(), a.z()});
                 piece.putIntArray("to", new int[]{b.x(), b.y(), b.z()});
-                i = j + 1;
             } else {
                 piece.putString("type", "curve");
-                piece.put("curve", curve(a, anchors.get(i + 1)).write(BlockPos.ZERO));
-                i++;
+                piece.put("curve", curve(a, b).write(BlockPos.ZERO));
             }
             out.add(piece);
         }
@@ -87,6 +94,8 @@ public record Blueprint(int id, String owner, BlockPos start, BlockPos goal, Lis
         CompoundTag t = new CompoundTag();
         t.putInt("id", id);
         t.putString("owner", owner);
+        if (ownerId != null) t.putUUID("ownerId", ownerId);
+        t.putLongArray("built", built.toLongArray());
         t.putIntArray("start", new int[]{start.getX(), start.getY(), start.getZ()});
         t.putIntArray("goal", new int[]{goal.getX(), goal.getY(), goal.getZ()});
         ListTag an = new ListTag();
@@ -112,8 +121,9 @@ public record Blueprint(int id, String owner, BlockPos start, BlockPos goal, Lis
             moves.add(Moves.MOVES.get(v[0]).get(v[1]));
         }
         int[] s = t.getIntArray("start"), g = t.getIntArray("goal");
-        return new Blueprint(t.getInt("id"), t.getString("owner"), new BlockPos(s[0], s[1], s[2]), new BlockPos(g[0], g[1], g[2]),
-                anchors, moves, t.getDouble("length"), t.getInt("trackItems"));
+        return new Blueprint(t.getInt("id"), t.getString("owner"), t.hasUUID("ownerId") ? t.getUUID("ownerId") : null,
+                new BlockPos(s[0], s[1], s[2]), new BlockPos(g[0], g[1], g[2]),
+                anchors, moves, t.getDouble("length"), t.getInt("trackItems"), BitSet.valueOf(t.getLongArray("built")));
     }
 
     /** What a client gets: enough to draw and label it, not the plan. */
@@ -124,7 +134,9 @@ public record Blueprint(int id, String owner, BlockPos start, BlockPos goal, Lis
         t.putDouble("length", length);
         t.putInt("trackItems", trackItems);
         ListTag ps = new ListTag();
-        ps.addAll(pieces(anchors, moves));
+        List<CompoundTag> pieces = pieces(anchors, moves);
+        for (int i = 0; i < pieces.size(); i++) pieces.get(i).putBoolean("built", built.get(i));
+        ps.addAll(pieces);
         t.put("pieces", ps);
         return t;
     }

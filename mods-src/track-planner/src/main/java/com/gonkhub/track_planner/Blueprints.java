@@ -47,6 +47,23 @@ public final class Blueprints extends SavedData {
         return removed;
     }
 
+    /** Marks a piece built; clients hear about it within two seconds (the whole set is resent, so not every piece). */
+    public void markBuilt(Blueprint b, int move) {
+        b.built().set(move);
+        setDirty();
+        syncSoon = true;
+    }
+
+    boolean syncSoon;
+
+    /** Sends a pending change, at most every 40 ticks. Called from the server tick. */
+    void flush(MinecraftServer server) {
+        if (syncSoon && server.getTickCount() % 40 == 0) {
+            syncSoon = false;
+            sync(server, null);
+        }
+    }
+
     public void clear(MinecraftServer server) {
         all.clear();
         setDirty();

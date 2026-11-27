@@ -265,27 +265,47 @@ public final class Builder {
         };
     }
 
-    static void setTrack(ServerLevel level, Anchor a) {
+    static void setTrack(ServerLevel level, Anchor a) { setTrack(level, a, AllBlocks.TRACK.getDefaultState()); }
+
+    /** Puts a flat track block of the given kind at the anchor unless one is there. True when one was placed. */
+    static boolean setTrack(ServerLevel level, Anchor a, BlockState trackBase) {
         BlockState st = level.getBlockState(a.pos());
-        if (st.getBlock() instanceof TrackBlock) return;
-        level.setBlock(a.pos(), AllBlocks.TRACK.getDefaultState().setValue(TrackBlock.SHAPE, shape(a.dir())), Block.UPDATE_ALL);
+        if (st.getBlock() instanceof TrackBlock) return false;
+        level.setBlock(a.pos(), trackBase.setValue(TrackBlock.SHAPE, shape(a.dir())), Block.UPDATE_ALL);
+        return true;
     }
 
-    /** One player-style connection from a to b. Returns null when Create accepted it, else Create's reason. */
     static String connect(ServerLevel level, FakePlayer player, Anchor a, Anchor b, Result r) {
-        setTrack(level, b);
+        return connect(level, player, a, b, r, AllBlocks.TRACK.asItem());
+    }
+
+    /**
+     * One player-style connection from a to b with the given track item, through Create's TrackPlacement.tryConnect.
+     * A survival player pays for the track out of their inventory, exactly as when placing it by hand.
+     * Returns null when Create accepted it, else Create's reason.
+     */
+    static String connect(ServerLevel level, net.minecraft.server.level.ServerPlayer player, Anchor a, Anchor b, Result r, net.minecraft.world.item.Item trackItem) {
+        BlockState base = trackItem instanceof net.minecraft.world.item.BlockItem bi ? bi.getBlock().defaultBlockState() : AllBlocks.TRACK.getDefaultState();
+        setTrack(level, b, base);
         BlockState s1 = level.getBlockState(a.pos()), s2 = level.getBlockState(b.pos());
         if (!(s1.getBlock() instanceof ITrackBlock t1) || !(s2.getBlock() instanceof ITrackBlock)) return "anchor is not a track";
         int[] d = Moves.DIR[a.dir()];
         Vec3 axis = new Vec3(d[0], 0, d[1]);
-        ItemStack stack = AllBlocks.TRACK.asStack(64);
+        ItemStack stack = new ItemStack(trackItem, 64);
         stack.set(AllDataComponents.TRACK_CONNECTING_FROM, new TrackPlacement.ConnectingFrom(
                 a.pos(), axis, new Vec3(0, 1, 0), t1.getCurveStart(level, a.pos(), s1, axis)));
-        // look along the line, as a player making this connection would
+        // look along the line, as a player making this connection would; put the real view back after
+        float yRot = player.getYRot(), xRot = player.getXRot();
         Vec3 look = Vec3.atCenterOf(b.pos()).subtract(Vec3.atCenterOf(a.pos()));
         player.setYRot((float) Math.toDegrees(Math.atan2(-look.x, look.z)));
         player.setXRot(0);
-        TrackPlacement.PlacementInfo info = TrackPlacement.tryConnect(level, player, b.pos(), s2, stack, false, true);
+        TrackPlacement.PlacementInfo info;
+        try {
+            info = TrackPlacement.tryConnect(level, player, b.pos(), s2, stack, false, true);
+        } finally {
+            player.setYRot(yRot);
+            player.setXRot(xRot);
+        }
         r.trackItems += info.requiredTracks;
         return Boolean.TRUE.equals(read(info, "valid")) ? null : String.valueOf(read(info, "message"));
     }
