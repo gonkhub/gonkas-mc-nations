@@ -153,11 +153,15 @@ public final class XaeroMapOverlay {
     }
 
     static void quad(VertexConsumer vc, Matrix4f m, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, int argb) {
-        // GUI quads are drawn without culling, but keep a consistent winding anyway
+        // the GUI render type culls back faces, and a segment's winding depends on its direction: draw both
         vc.addVertex(m, x1, y1, 0).setColor(argb);
         vc.addVertex(m, x2, y2, 0).setColor(argb);
         vc.addVertex(m, x3, y3, 0).setColor(argb);
         vc.addVertex(m, x4, y4, 0).setColor(argb);
+        vc.addVertex(m, x4, y4, 0).setColor(argb);
+        vc.addVertex(m, x3, y3, 0).setColor(argb);
+        vc.addVertex(m, x2, y2, 0).setColor(argb);
+        vc.addVertex(m, x1, y1, 0).setColor(argb);
     }
 
     static double distance(double px, double py, float x1, float y1, float x2, float y2) {
