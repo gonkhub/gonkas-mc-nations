@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.12.0 - 2026-11-26
+
 - **New tabs in the Caravan Station.**
   - **Shipments:** everything coming in or going out, what it's doing right now (packing,
     on the road, waiting for a train or boat, held at a colony on the way) and when it arrives.
