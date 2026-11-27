@@ -17,6 +17,21 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- **Colonies trade across the whole network.** A colony can now buy from any colony its
+  roads, docks or railways lead to, not just its neighbours. Goods travel the best route
+  through the colonies in between, and each colony on the way feeds the next leg and earns a
+  small fee for carrying it on.
+- **Money is back.** Every colony with a caravan station gets a one-time grant of 25,000
+  spurs. Colonies pay for what they import, and a colony earns a bonus when its goods fill
+  another colony's request. A small market fee comes off each sale. Nations are still
+  cosmetic.
+- **Bigger shipments, no more one-carrot caravans.** Caravans carry at least 64 items. A
+  smaller order still goes out, but only after waiting a day. How much a caravan can carry
+  now runs from 256 (town hall 1) to 1,024 (town hall 5).
+- **Stations export surplus on their own.** Stone, wood, ore and crops your Warehouse holds
+  beyond 256 are offered for sale automatically, unless your colony needs them. An export
+  quota you set still overrides this.
+- **Caravans are rarely lost on the road now**: at most a 2% chance on the longest routes.
 - **Cobblestone generators make normal cobblestone and stone again.** Inert cobblestone is
   retired for now. Any inert cobblestone or stone you already have can be crafted back into
   the normal block, one for one.
