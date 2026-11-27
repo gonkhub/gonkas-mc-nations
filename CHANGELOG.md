@@ -17,7 +17,16 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Continents nobody has reached yet are wilder: regions now have hazards (freezing, poisoned
+  water, scorching sun, thorns, radiation and more) and boons (free boiler heat, faster
+  windmills, fertile soil, longer-lasting potions, low gravity and more). The map card for a
+  region lists them, with what protects you.
+- Region presets reworked, including the Overgrowth; seven new ones, among them the Lost World.
+  Ordinary regions can roll traits, and very rarely a dangerous intruder from far away.
+- Map cards show the enemy level range. The continent card shows deaths, the deadliest foe and
+  champions slain, and no longer runs off the screen.
+- Mob Champions are rarer, legendary ones most of all; some regions breed more of them.
+- Everything already explored, the starter continent included, is unchanged.
 
 
 ## 0.13.2 - 2026-11-27

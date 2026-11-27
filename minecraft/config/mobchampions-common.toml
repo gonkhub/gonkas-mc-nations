@@ -28,19 +28,19 @@
 	spawnMessageRange = 64
 	#Relative weight for a normal or common mob to spawn.
 	#Range: 0 ~ 5000
-	commonMobWeight = 200
+	commonMobWeight = 800
 	#Relative weight for uncommon champions to spawn.
 	#Range: 0 ~ 100
-	uncommonWeight = 50
+	uncommonWeight = 40
 	#Relative weight for rare champions to spawn.
 	#Range: 0 ~ 100
-	rareWeight = 30
+	rareWeight = 20
 	#Relative weight for epic champions to spawn.
 	#Range: 0 ~ 100
-	epicWeight = 9
+	epicWeight = 5
 	#Relative weight for legendary champions to spawn.
 	#Range: 0 ~ 100
-	legendaryWeight = 2
+	legendaryWeight = 1
 	#Whitelist of entities that can spawn as champions.
 	#If the whitelist is empty, the mod is effectively disabled.
 	#Entity types must be in the format modid:entity_name
