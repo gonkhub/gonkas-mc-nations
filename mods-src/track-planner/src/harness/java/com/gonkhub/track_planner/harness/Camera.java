@@ -62,9 +62,9 @@ public final class Camera {
         }
         if (index >= views.size()) return;
         wait++;
-        // wait until every section in view is built and stays built for 2 s, at most 90 s
+        // wait until every section in view is built and stays built for 2 s, at most 200 s
         settled = mc.levelRenderer.hasRenderedAllSections() ? settled + 1 : 0;
-        if ((wait > 100 && settled > 40) || wait > 1800) {
+        if ((wait > 100 && settled > 40) || wait > 4000) {
             View v = views.get(index);
             Screenshot.grab(mc.gameDirectory, v.name() + ".png", mc.getMainRenderTarget(), msg -> {});
             System.out.println("[camera] " + v.name() + " after " + wait + " ticks");
