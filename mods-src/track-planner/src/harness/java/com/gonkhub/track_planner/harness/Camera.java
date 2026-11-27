@@ -148,23 +148,26 @@ public final class Camera {
             planStart = new double[]{v.camX() - 110, v.camZ() + 50};
             planGoal = new double[]{v.camX() + 95, v.camZ() - 95};
         }
+        boolean first = stepWait == 0;  // actions run once, on a phase's first tick; the wait follows
         switch (mapPhase) {
             case 10 -> { mouseTo(mc, com.gonkhub.track_planner.client.MapPlanning.BUTTON_X + 10, com.gonkhub.track_planner.client.MapPlanning.BUTTON_Y + 7); step(15); }
-            case 11 -> { click(mc); step(15); }
+            case 11 -> { if (first) click(mc); step(15); }
             case 12 -> { mouseTo(mc, v.screenX(planStart[0]), v.screenY(planStart[1])); step(10); }
-            case 13 -> { click(mc); step(10); }
+            case 13 -> { if (first) click(mc); step(10); }
             case 14 -> {
                 double fx = planStart[0] + (planGoal[0] - planStart[0]) * 0.7, fz = planStart[1] + (planGoal[1] - planStart[1]) * 0.7;
                 mouseTo(mc, v.screenX(fx), v.screenY(fz));
                 step(40);
             }
             case 15 -> {
-                Screenshot.grab(mc.gameDirectory, "map_plan_1.png", mc.getMainRenderTarget(), msg -> {});
-                System.out.println("[camera] map_plan_1 (choosing the destination)");
+                if (first) {
+                    Screenshot.grab(mc.gameDirectory, "map_plan_1.png", mc.getMainRenderTarget(), msg -> {});
+                    System.out.println("[camera] map_plan_1 (choosing the destination)");
+                }
                 step(10);
             }
             case 16 -> { mouseTo(mc, v.screenX(planGoal[0]), v.screenY(planGoal[1])); step(10); }
-            case 17 -> { versionBefore = com.gonkhub.track_planner.BlueprintsPayload.version; click(mc); step(0); }
+            case 17 -> { if (first) { versionBefore = com.gonkhub.track_planner.BlueprintsPayload.version; click(mc); } step(0); }
             case 18 -> {
                 // wait for the new blueprint to arrive, then give the map a moment
                 if (com.gonkhub.track_planner.BlueprintsPayload.version != versionBefore && mapWait > 100 || mapWait > 3000) {
