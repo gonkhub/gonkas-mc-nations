@@ -68,7 +68,7 @@ def packCreateConfig = tasks.register('packCreateConfig', Copy) {
     from '../../minecraft/config/create-server.toml'
     into 'run/config'
 }
-tasks.matching { it.name in ['runServer', 'runHarness'] }.configureEach { dependsOn packCreateConfig }
+tasks.matching { it.name in ['runServer', 'runHarness', 'runCamera'] }.configureEach { dependsOn packCreateConfig }
 tasks.named('compileHarnessJava') { dependsOn fetchCreate }
 
 dependencies {
@@ -90,6 +90,14 @@ neoForge {
             programArgument '--nogui'
             sourceSet = sourceSets.harness
             systemProperty 'track_planner.harness', 'true'
+        }
+        // Screenshots of a built world: copy run/world to run/saves/tracks first, write run/viewpoints.txt.
+        // Headless: xvfb-run with Mesa's software OpenGL (see harness/Camera.java).
+        camera {
+            client()
+            sourceSet = sourceSets.harness
+            systemProperty 'track_planner.camera', 'true'
+            programArguments.addAll '--quickPlaySingleplayer', 'tracks', '--width', '1600', '--height', '900'
         }
         configureEach {
             logLevel = org.slf4j.event.Level.INFO
