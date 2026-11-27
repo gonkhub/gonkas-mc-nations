@@ -258,7 +258,9 @@ public final class Planner {
             int sx = x + m.samples()[i][0], sz = z + m.samples()[i][1];
             double ty = y0 + dy * (i + 1) / (double) n;
             int g = terrain.ground(sx, sz);
-            int water = terrain.water(sx, sz);
+            // Create's real curve can pass a block to either side of these samples, so a shore counts as water
+            int water = Integer.MIN_VALUE;
+            for (int ox = -1; ox <= 1; ox++) for (int oz = -1; oz <= 1; oz++) water = Math.max(water, terrain.water(sx + ox, sz + oz));
             // the rails rest on block ty - 1 when the track lies on the ground
             double above = ty - 1 - g;
             if (water != Integer.MIN_VALUE) {
