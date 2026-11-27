@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.14.0 - 2026-11-27
+
 - Continents nobody has reached yet are wilder: regions now have hazards (freezing, poisoned
   water, scorching sun, thorns, radiation and more) and boons (free boiler heat, faster
   windmills, fertile soil, longer-lasting potions, low gravity and more). The map card for a
