@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.11.0 - 2026-11-26
+
 - **Colonies trade across the whole network.** A colony can now buy from any colony its
   roads, docks or railways lead to, not just its neighbours. Goods travel the best route
   through the colonies in between, and each colony on the way feeds the next leg and earns a
