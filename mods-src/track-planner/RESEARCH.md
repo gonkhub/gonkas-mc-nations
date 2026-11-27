@@ -50,7 +50,7 @@ For schematics, `TrackBlock.getRequiredItems` adds up `BezierConnection.getTrack
 
 Neither CurseForge nor Modrinth could be opened from this environment, so this list comes from search results only and is unverified:
 
-- **[Create: Auto Track](https://www.curseforge.com/minecraft/mc-mods/create-auto-track)**: a "Builder Block" machine. You set a destination in its GUI and it lays railway with chosen track and roadbed. This is the closest match. **Check its loader, version and how it routes before building our own.**
+- **[Create: Auto Track](https://modrinth.com/mod/create-auto-track)** 2.0.2 (NeoForge 1.21.1): **tested on a real server, see [`autotrack-test/`](autotrack-test/README.md).** It doesn't pathfind. It builds one fixed L-shape (straight, a 19-block-radius 90° curve, straight) at the builder's height. It clears a 5×6 strip of everything in its way, takes no materials, ignores land claims, and froze the server for 14 s on a 1.8 km line. The track it builds is valid and trains can route over it. Not suitable for this pack as a player tool.
 - **[Automatic Railway Generation](https://modrinth.com/project/qUULEIKC)**: builds Create railways automatically between spawn and villages as you explore (Create 6.0.10+). It generates rails by itself and is not player-planned. In development, and it edits terrain.
 - **[Railway tools for Axiom](https://modrinth.com/mod/railway-tools-for-axioms)**: route tools for the Axiom editor, aimed at large builders. Not a survival tool.
 - **Railways Untold / Create: Infinite Railways**: procedurally generated railways. Different goal.
@@ -113,6 +113,6 @@ Recommended order: 1 → 2 → 4, with 3 as an optional extra.
 
 ## Next steps
 
-1. Check Create: Auto Track (and ARG) in a test instance. If one already does this well enough, use it instead.
+1. ~~Check Create: Auto Track~~ (done: not a planner, see `autotrack-test/`). Optionally try Automatic Railway Generation the same way.
 2. If not, scaffold `mods-src/track-planner` from Desire Paths (moddev 2.0.148, Create 6.0.10 as a compile dependency).
 3. First milestone: creative-only planner item + server search + ghost display + instant build, with a game test that builds a plan and checks that Create's track graph connects start to end.

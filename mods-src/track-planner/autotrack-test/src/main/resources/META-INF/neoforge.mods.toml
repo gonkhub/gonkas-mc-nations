@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="none"
+[[mods]]
+modId="attest"
+version="0.0.1"
+displayName="Auto Track test harness"
+[[dependencies.attest]]
+modId="create_auto_track"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"

@@ -1,0 +1,24 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+version = '0.0.1'
+group = 'attest'
+base { archivesName = 'attest' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+dependencies {
+    // Compile against Create for the track-graph check; the real jars load from run/mods at runtime.
+    compileOnly files('libs/create-1.21.1-6.0.10.jar')
+    compileOnly fileTree('libs/jij')
+}
+neoForge {
+    version = '21.1.265'
+    runs {
+        server {
+            server()
+            programArgument '--nogui'
+            gameDirectory = project.file('run')
+        }
+    }
+    mods { attest { sourceSet(sourceSets.main) } }
+}
