@@ -17,7 +17,9 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **Windmills turn faster the higher you build them.** No bonus at sea level, rising to double
+  speed (and double stress capacity) at the top of the world. Existing windmills pick it up the
+  next time they are stopped and started.
 
 
 ## 0.12.0 - 2026-11-26

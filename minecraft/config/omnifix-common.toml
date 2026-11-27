@@ -37,3 +37,26 @@
 	#armor. A weapon is only given to a monster with an empty hand, so a skeleton
 	#keeps its bow and a piglin its crossbow.
 	gearBands = ["0,0.05,100,0,0,0,0,0", "4800,0.11,0,50,50,0,0,0", "9600,0.13,0,40,30,30,0,0", "14000,0.16,0,30,10,60,0,0", "30000,0.22,0,15,5,78,2,0", "40000,0.26,0,5,0,85,10,0", "50000,0.30,0,0,0,70,30,0", "60000,0.36,0,0,0,35,60,5", "75000,0.45,0,0,0,10,65,25", "90000,0.60,0,0,0,0,40,60", "120000,0.75,0,0,0,0,0,100"]
+
+#Create windmills turn faster the higher their Windmill Bearing sits.
+#Create's own speed (1 RPM per windmillSailsPerRPM sail blocks, 1..16 RPM) is
+#multiplied by a factor that rises in a straight line from 1.0 at startY to
+#maxMultiplier at fullY, and stays at maxMultiplier above that. Stress capacity
+#follows speed, as it always does for a Create generator, so a high windmill also
+#supplies more SU. Read on the server; takes effect when a windmill is (re)assembled.
+[windmillAltitude]
+	#false gives windmills Create's own speed at every height, unchanged.
+	enabled = true
+	#Bearing Y at and below which there is no bonus. Default is sea level.
+	# Default: 63
+	# Range: -64 ~ 320
+	startY = 63
+	#Bearing Y at which the full bonus is reached. Default is the build height.
+	# Default: 320
+	# Range: -64 ~ 2048
+	fullY = 320
+	#Speed multiplier at fullY. 2.0 means a 16 RPM windmill turns at 32 RPM at the
+	#top of the world (and 24 RPM about halfway up, around Y 190).
+	# Default: 2.0
+	# Range: 1.0 ~ 16.0
+	maxMultiplier = 2.0
