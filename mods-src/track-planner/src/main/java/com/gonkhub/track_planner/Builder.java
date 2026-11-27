@@ -15,6 +15,7 @@ import com.simibubi.create.content.trains.track.TrackPlacement;
 import com.simibubi.create.content.trains.track.TrackShape;
 import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -22,6 +23,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -37,7 +39,8 @@ import java.util.UUID;
  *
  * Nothing is ever built under the track: it lies on the ground, or runs just above it, and players can
  * add embankments or bridges later. The only earthworks are clearing: a 3-wide, clearance-tall gauge along
- * the line before the track goes in, and again along each curve as Create actually laid it. Every move is placed through Create's own
+ * the line before the track goes in, and again along each curve as Create actually laid it, taking any sand
+ * or gravel that would fall onto the rails. The one thing ever placed is a block to keep water out of a cutting. Every move is placed through Create's own
  * TrackPlacement.tryConnect, the code that runs when a player joins two tracks, so each piece passes
  * Create's checks and is laid exactly as a player would lay it.
  */
@@ -159,6 +162,25 @@ public final class Builder {
         if (st.isAir() || st.getBlock() instanceof ITrackBlock || st.getBlock() instanceof FakeTrackBlock || !st.getFluidState().isEmpty()) return;
         count(r, "removed " + category(st));
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+
+        // sand and gravel resting on what was removed would fall onto the rails later: take the whole stack
+        BlockPos.MutableBlockPos up = pos.mutable().move(Direction.UP);
+        while (level.getBlockState(up).getBlock() instanceof FallingBlock) {
+            count(r, "removed falling block above the cut");
+            level.setBlock(up, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+            up.move(Direction.UP);
+        }
+
+        // water beside or above the new gap would flow onto the rails: wall it off with what was dug out
+        BlockState seal = st.getBlock() instanceof FallingBlock || !st.isCollisionShapeFullBlock(level, pos)
+                ? Blocks.STONE.defaultBlockState() : st;
+        for (Direction d : new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP}) {
+            BlockPos n = pos.relative(d);
+            if (!level.getFluidState(n).isEmpty() && !(level.getBlockState(n).getBlock() instanceof ITrackBlock)) {
+                count(r, "placed water seal");
+                level.setBlock(n, seal, Block.UPDATE_CLIENTS);
+            }
+        }
     }
 
     static boolean isLevelStraight(Move m, Anchor a, Anchor b) { return m.kind() == Moves.Kind.STRAIGHT && a.y() == b.y(); }
