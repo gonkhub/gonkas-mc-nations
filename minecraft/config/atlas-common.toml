@@ -1,11 +1,14 @@
 [world]
-	#Distance in blocks between continent centres. A continent is 0.54 to 0.76 of
-	#this across, the rest is ocean. NEVER change on an existing world.
+	#The world's scale. The starter continent (around 0,0) is laid out exactly as in
+	#atlas 1.2 with this spacing; every other continent is placed on cells 0.4 of it
+	#across, varying from islets to continents larger than the starter one.
+	#NEVER change on an existing world.
 	# Default: 14000
 	# Range: 3000 ~ 60000
 	plateSpacing = 14000
-	#Chance that a plate holds a continent rather than open ocean. The plate at the
-	#origin always does. NEVER change on an existing world.
+	#Kept for the starter continent: its coastline was shaped by which of its atlas
+	#1.2 neighbours existed, and this decides that. It no longer sets how much of the
+	#rest of the world is land. NEVER change on an existing world.
 	# Default: 0.72
 	# Range: 0.1 ~ 1.0
 	landChance = 0.72
