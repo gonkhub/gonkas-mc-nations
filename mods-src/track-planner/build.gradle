@@ -1,0 +1,130 @@
+import java.security.MessageDigest
+
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+// The harness drives the planner on a headless server and writes a report (./gradlew runHarness).
+// It lives in its own source set so it never ships in the jar.
+sourceSets {
+    harness {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    harnessImplementation.extendsFrom implementation
+    harnessCompileOnly.extendsFrom compileOnly
+}
+
+// ---------------------------------------------------------------------------
+// Create: compile against the EXACT jar the pack ships, fetched from the URL and
+// sha512 in the packwiz index, so this repo never carries the jar itself. The
+// same jar goes into run/mods so the harness server loads it (with its jar-in-jar
+// Flywheel, Ponder and Registrate). None of Create's maven builds is byte-identical
+// to the released jar, which is why this does not use a maven dependency.
+// ---------------------------------------------------------------------------
+def createIndex = file('../../minecraft/mods/.index/create.pw.toml').text
+def createUrl = (createIndex =~ /(?m)^url = '([^']+)'/)[0][1]
+def createSha512 = (createIndex =~ /(?m)^hash = '([^']+)'/)[0][1]
+def createJar = file('libs/create.jar')
+
+def fetchCreate = tasks.register('fetchCreate') {
+    inputs.property('url', createUrl)
+    outputs.dir('libs')
+    doLast {
+        if (!createJar.exists() || MessageDigest.getInstance('SHA-512').digest(createJar.bytes).encodeHex().toString() != createSha512) {
+            createJar.parentFile.mkdirs()
+            ant.get(src: createUrl, dest: createJar)
+            def got = MessageDigest.getInstance('SHA-512').digest(createJar.bytes).encodeHex().toString()
+            if (got != createSha512) {
+                createJar.delete()
+                throw new GradleException("Create jar sha512 mismatch: ${got}")
+            }
+        }
+        copy {
+            from zipTree(createJar).matching { include 'META-INF/jarjar/*.jar' }
+            into 'libs/jij'
+            eachFile { path = name }
+            includeEmptyDirs = false
+        }
+        copy { from createJar; into 'run/mods' }
+    }
+}
+tasks.named('compileJava') { dependsOn fetchCreate }
+
+// Test servers use the pack's Create server config (maxTrackPlacementLength and friends), not Create's defaults.
+def packCreateConfig = tasks.register('packCreateConfig', Copy) {
+    from '../../minecraft/config/create-server.toml'
+    into 'run/config'
+}
+tasks.matching { it.name in ['runServer', 'runHarness'] }.configureEach { dependsOn packCreateConfig }
+tasks.named('compileHarnessJava') { dependsOn fetchCreate }
+
+dependencies {
+    compileOnly files('libs/create.jar')
+    compileOnly fileTree('libs/jij') { include '*.jar' }
+}
+
+neoForge {
+    version = project.neo_version
+    addModdingDependenciesTo(sourceSets.harness)
+
+    runs {
+        server {
+            server()
+            programArgument '--nogui'
+        }
+        harness {
+            server()
+            programArgument '--nogui'
+            sourceSet = sourceSets.harness
+            systemProperty 'track_planner.harness', 'true'
+        }
+        configureEach {
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+            sourceSet(sourceSets.harness)
+        }
+    }
+}
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
