@@ -17,7 +17,8 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- Fixed: walking into a Station Hand kicked you from the server with "Internal server error".
+  Station Hands now talk like Couriers.
 
 
 ## 0.13.1 - 2026-11-27
