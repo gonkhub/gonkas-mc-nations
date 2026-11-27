@@ -78,6 +78,15 @@ public final class PlanJobs {
      */
     public static CompletableFuture<Blueprint> submit(ServerLevel level, Supplier<Ends> ends, String owner, UUID requester,
                                                       Consumer<Component> report) {
+        return submit(level, ends, owner, requester, report, 0, 0);
+    }
+
+    /**
+     * As above; parallel = 1 or -1 also plans a second line alongside it, on its right or left, spacing
+     * blocks apart, saved as its own blueprint. The future holds the first line's blueprint.
+     */
+    public static CompletableFuture<Blueprint> submit(ServerLevel level, Supplier<Ends> ends, String owner, UUID requester,
+                                                      Consumer<Component> report, int parallel, int spacing) {
         MinecraftServer server = level.getServer();
         Job job = new Job(owner, requester);
         running.put(job, true);
@@ -90,10 +99,20 @@ public final class PlanJobs {
                 Planner planner = new Planner(level, Terrain.Mode.PREFETCH, new Planner.Weights());
                 job.planner = planner;
                 Planner.Plan plan = planner.plan(e.start(), e.goal());
+                Planner.Plan twin = null;
+                if (parallel != 0 && plan.stats().failure == null) {
+                    job.stage = "planning the parallel line";
+                    Planner p2 = new Planner(level, Terrain.Mode.PREFETCH, new Planner.Weights());
+                    job.planner = p2;
+                    twin = p2.planParallel(plan, parallel, spacing);
+                }
                 double seconds = (System.nanoTime() - t0) / 1e9;
+                Planner.Plan second = twin;
                 server.execute(() -> {
                     running.remove(job);
-                    done.complete(TrackPlanner.saveBlueprint(level, plan, e.start().pos(), e.goal().pos(), owner, requester, seconds, report));
+                    Blueprint b = TrackPlanner.saveBlueprint(level, plan, e.start().pos(), e.goal().pos(), owner, requester, seconds, report);
+                    if (second != null) saveTwin(level, second, owner, requester, parallel, report);
+                    done.complete(b);
                 });
             } catch (Throwable ex) {
                 LogUtils.getLogger().error("Track Planner: planning failed", ex);
@@ -105,6 +124,38 @@ public final class PlanJobs {
             }
         });
         return done;
+    }
+
+    /** A parallel line beside an existing blueprint, planned in the background like any other. */
+    public static void submitParallel(ServerLevel level, Blueprint of, int side, int spacing, String owner, UUID requester, Consumer<Component> report) {
+        MinecraftServer server = level.getServer();
+        Job job = new Job(owner, requester);
+        running.put(job, true);
+        Planner.Plan orig = of.plan();
+        WORKER.execute(() -> {
+            try {
+                Planner p = new Planner(level, Terrain.Mode.PREFETCH, new Planner.Weights());
+                job.planner = p;
+                Planner.Plan twin = p.planParallel(orig, side, spacing);
+                server.execute(() -> { running.remove(job); saveTwin(level, twin, owner, requester, side, report); });
+            } catch (Throwable ex) {
+                LogUtils.getLogger().error("Track Planner: planning failed", ex);
+                server.execute(() -> {
+                    running.remove(job);
+                    report.accept(Component.literal("Track Planner: planning failed (" + ex + ")").withStyle(ChatFormatting.RED));
+                });
+            }
+        });
+    }
+
+    static void saveTwin(ServerLevel level, Planner.Plan twin, String owner, UUID requester, int side, Consumer<Component> report) {
+        if (twin.stats().failure != null) {
+            report.accept(Component.literal("Track Planner: no parallel line fits on the " + (side > 0 ? "right" : "left") + " (" + twin.stats().failure + ")")
+                    .withStyle(ChatFormatting.GOLD));
+            return;
+        }
+        var a = twin.anchors();
+        TrackPlanner.saveBlueprint(level, twin, a.get(0).pos(), a.get(a.size() - 1).pos(), owner, requester, 0, report);
     }
 
     @SubscribeEvent

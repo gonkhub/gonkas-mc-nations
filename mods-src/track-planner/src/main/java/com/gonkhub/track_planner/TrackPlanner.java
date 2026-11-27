@@ -63,6 +63,13 @@ public final class TrackPlanner {
             COMPONENTS.registerComponentType("building", b -> b.persistent(com.mojang.serialization.Codec.BOOL)
                     .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.BOOL));
 
+    /** Double track on this Rail Planner: 1 a second line on the right, -1 on the left; absent for single track. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> PARALLEL =
+            COMPONENTS.registerComponentType("parallel", b -> b.persistent(com.mojang.serialization.Codec.INT)
+                    .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT));
+    /** Centre-to-centre spacing of double track. */
+    public static final int SPACING = 4;
+
     public TrackPlanner(IEventBus modBus) {
         ITEMS.register(modBus);
         BLOCKS.register(modBus);
@@ -84,7 +91,7 @@ public final class TrackPlanner {
         var reg = e.registrar("1");
         reg.playToClient(BlueprintsPayload.TYPE, BlueprintsPayload.STREAM_CODEC, (p, ctx) -> BlueprintsPayload.receive(p));
         reg.playToServer(MapPlanRequest.TYPE, MapPlanRequest.STREAM_CODEC, MapPlanRequest::handle);
-        reg.playToServer(ToggleBuildRequest.TYPE, ToggleBuildRequest.STREAM_CODEC, ToggleBuildRequest::handle);
+        reg.playToServer(PlannerKeyRequest.TYPE, PlannerKeyRequest.STREAM_CODEC, PlannerKeyRequest::handle);
     }
 
     static void creativeTab(BuildCreativeModeTabContentsEvent e) {
@@ -161,6 +168,15 @@ public final class TrackPlanner {
                                     return 1;
                                 })))
                 .then(Commands.literal("blueprints").executes(TrackPlanner::list))
+                // a second line beside a blueprint: its owner or an op
+                .then(Commands.literal("parallel")
+                        .then(Commands.argument("id", IntegerArgumentType.integer(1))
+                                .then(Commands.literal("right").executes(c -> parallel(c, 1, SPACING))
+                                        .then(Commands.argument("spacing", IntegerArgumentType.integer(3, 16))
+                                                .executes(c -> parallel(c, 1, IntegerArgumentType.getInteger(c, "spacing")))))
+                                .then(Commands.literal("left").executes(c -> parallel(c, -1, SPACING))
+                                        .then(Commands.argument("spacing", IntegerArgumentType.integer(3, 16))
+                                                .executes(c -> parallel(c, -1, IntegerArgumentType.getInteger(c, "spacing")))))))
                 .then(Commands.literal("build").requires(s -> s.hasPermission(2))
                         .then(Commands.literal("last").executes(c -> build(c, -1)))
                         .then(Commands.argument("id", IntegerArgumentType.integer(1)).executes(c -> build(c, IntegerArgumentType.getInteger(c, "id")))))
@@ -194,6 +210,20 @@ public final class TrackPlanner {
                     b.id(), b.owner(), b.start().toShortString(), b.goal().toShortString(), b.length(), b.trackItems(),
                     b.built().cardinality(), b.moves().size())), false);
         return all.size();
+    }
+
+    static int parallel(CommandContext<CommandSourceStack> c, int side, int spacing) {
+        var src = c.getSource();
+        int id = IntegerArgumentType.getInteger(c, "id");
+        Blueprint b = Blueprints.get(src.getServer()).byId(id);
+        if (b == null) { src.sendFailure(Component.literal("No blueprint #" + id + ".")); return 0; }
+        ServerPlayer p = src.getPlayer();
+        if (p != null && !b.mayManage(p)) { src.sendFailure(Component.literal("Blueprint #" + id + " is " + b.owner() + "'s.")); return 0; }
+        if (p != null && PlanJobs.busy(p.getUUID())) { src.sendFailure(Component.literal("Your last line is still being planned.")); return 0; }
+        src.sendSuccess(() -> Component.literal(String.format("Planning a line %d blocks to the %s of blueprint #%d in the background...",
+                spacing, side > 0 ? "right" : "left", id)).withStyle(ChatFormatting.GRAY), false);
+        PlanJobs.submitParallel(src.getLevel(), b, side, spacing, b.owner(), b.ownerId(), m -> src.sendSuccess(() -> m, false));
+        return 1;
     }
 
     static int build(CommandContext<CommandSourceStack> c, int id) throws CommandSyntaxException {

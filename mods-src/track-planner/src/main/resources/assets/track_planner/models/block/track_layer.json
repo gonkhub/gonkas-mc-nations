@@ -1,8 +1,9 @@
 {
   "parent": "minecraft:block/cube_bottom_top",
   "textures": {
-    "top": "create:block/andesite_casing",
-    "bottom": "create:block/andesite_casing",
-    "side": "create:block/railway_casing"
+    "top": "track_planner:block/track_layer_top",
+    "bottom": "track_planner:block/track_layer_bottom",
+    "side": "track_planner:block/track_layer_side",
+    "particle": "track_planner:block/track_layer_side"
   }
 }

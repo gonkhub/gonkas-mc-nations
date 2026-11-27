@@ -57,7 +57,9 @@ public final class Harness {
             new Case("a4_async_3km", 300, 300, 2800, 1900, false),
             new Case("s1_survival", -60, 220, -330, 420, false),
             new Case("l1_layer", 200, -150, 520, -420, false),
-            new Case("j1_join", -500, 500, -200, 700, false));
+            new Case("j1_join", -500, 500, -200, 700, false),
+            new Case("p1_parallel", 600, 300, 1000, 650, false),
+            new Case("p2_parallel_hills", -300, -300, -1300, -1100, false));
 
     @SubscribeEvent
     static void started(ServerStartedEvent e) throws Exception {
@@ -82,6 +84,11 @@ public final class Harness {
         for (Case c : CASES) {
             if (!only.isEmpty() && !Arrays.asList(only.split(",")).contains(c.name())) continue;
             if (c.async()) { startAsync(level, spawn, c); continue; }
+            if (c.name().startsWith("p")) {
+                try { ParallelTest.run(level, spawn, c.name(), c.sx(), c.sz(), c.gx(), c.gz(), log); }
+                catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
+                continue;
+            }
             if (c.name().startsWith("j")) {
                 try { JoinTest.run(level, spawn, c.name(), c.sx(), c.sz(), c.gx(), c.gz(), log); }
                 catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }

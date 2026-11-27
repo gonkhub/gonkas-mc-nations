@@ -32,6 +32,13 @@ record lives in `docs/`, which deliberately stays out of this repo.
   train drives along your line it lays the next piece within 12 blocks; put drills on the front
   to clear the way. If it runs out of track it says so and brakes, so mind your speed.
 - Only a line's owner (or an op) can build or remove it.
+- Lines can join existing track: click a track as the start or destination and the line
+  connects exactly onto it, carrying on from the end of a track or branching off the middle of
+  one with a junction.
+- **Double track:** press N with the Rail Planner to plan every line with a second one beside it
+  (on the right or the left, 4 blocks apart), following the first line's curves and heights.
+- Building never digs up chests, stations or machines in the way; it tells you to move them.
+- The Track Layer has its own look.
 
 
 ## 0.14.0 - 2026-11-27

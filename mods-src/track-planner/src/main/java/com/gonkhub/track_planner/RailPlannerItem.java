@@ -26,9 +26,12 @@ import java.util.List;
  */
 public final class RailPlannerItem extends Item {
     /** The toggle key's current binding, on the client; "the toggle key" elsewhere. */
-    static String keyName() {
-        if (!net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) return "the toggle key";
-        return com.gonkhub.track_planner.client.PlannerKeys.TOGGLE_BUILD.getTranslatedKeyMessage().getString();
+    static String keyName() { return keyName(false); }
+
+    static String keyName(boolean parallel) {
+        if (!net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) return "the key";
+        var k = parallel ? com.gonkhub.track_planner.client.PlannerKeys.CYCLE_PARALLEL : com.gonkhub.track_planner.client.PlannerKeys.TOGGLE_BUILD;
+        return k.getTranslatedKeyMessage().getString();
     }
 
     public RailPlannerItem(Properties p) { super(p); }
@@ -59,7 +62,8 @@ public final class RailPlannerItem extends Item {
         player.displayClientMessage(Component.literal("Planning " + start.toShortString() + " to " + at.toShortString() + " in the background...")
                 .withStyle(ChatFormatting.GRAY), true);
         BlockPos from = start;
-        PlanJobs.submit((ServerLevel) level, () -> new PlanJobs.Ends(LineEnd.at((ServerLevel) level, from), LineEnd.at((ServerLevel) level, at)), player.getName().getString(), player.getUUID(), player::sendSystemMessage);
+        PlanJobs.submit((ServerLevel) level, () -> new PlanJobs.Ends(LineEnd.at((ServerLevel) level, from), LineEnd.at((ServerLevel) level, at)),
+                player.getName().getString(), player.getUUID(), player::sendSystemMessage, parallel(stack), TrackPlanner.SPACING);
         return InteractionResult.CONSUME;
     }
 
@@ -78,6 +82,32 @@ public final class RailPlannerItem extends Item {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         }
         return InteractionResultHolder.pass(stack);
+    }
+
+    /** The Rail Planner in a player's main hand, else off hand, else null. */
+    public static ItemStack held(Player p) {
+        if (p.getMainHandItem().is(TrackPlanner.RAIL_PLANNER.get())) return p.getMainHandItem();
+        if (p.getOffhandItem().is(TrackPlanner.RAIL_PLANNER.get())) return p.getOffhandItem();
+        return null;
+    }
+
+    /** 1: lines get a second line on their right, -1 on their left, 0 single track. */
+    public static int parallel(ItemStack stack) {
+        Integer v = stack == null ? null : stack.get(TrackPlanner.PARALLEL.get());
+        return v == null ? 0 : Integer.signum(v);
+    }
+
+    /** Single, double on the right, double on the left, single... */
+    public static void cycleParallel(Player player, ItemStack stack) {
+        int next = switch (parallel(stack)) { case 0 -> 1; case 1 -> -1; default -> 0; };
+        if (next == 0) stack.remove(TrackPlanner.PARALLEL.get()); else stack.set(TrackPlanner.PARALLEL.get(), next);
+        player.displayClientMessage(Component.literal(next == 0 ? "Single track: lines are planned on their own."
+                : "Double track: every line gets a second one on its " + (next > 0 ? "right" : "left") + ", " + TrackPlanner.SPACING + " blocks apart.")
+                .withStyle(next == 0 ? ChatFormatting.GRAY : ChatFormatting.AQUA), true);
+    }
+
+    static String parallelName(ItemStack stack) {
+        return switch (parallel(stack)) { case 1 -> "double track, second line on the right"; case -1 -> "double track, second line on the left"; default -> "single track"; };
     }
 
     public static boolean building(ItemStack stack) {
@@ -106,5 +136,7 @@ public final class RailPlannerItem extends Item {
                 : Component.literal("Building OFF: only plans").withStyle(ChatFormatting.GRAY));
         if (building(stack))
             lines.add(Component.literal("with track and tools from your inventory").withStyle(ChatFormatting.DARK_GRAY));
+        lines.add(Component.literal("Planning " + parallelName(stack) + " (" + keyName(true) + " to change)")
+                .withStyle(parallel(stack) != 0 ? ChatFormatting.AQUA : ChatFormatting.DARK_GRAY));
     }
 }

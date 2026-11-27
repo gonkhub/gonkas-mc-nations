@@ -68,6 +68,6 @@ public record MapPlanRequest(int sx, int sz, int gx, int gz) implements CustomPa
         // finding the two ends loads their chunks, so it happens on the planner thread with the rest
         PlanJobs.submit(level, () -> {
             return new PlanJobs.Ends(LineEnd.column(level, r.sx, r.sz), LineEnd.column(level, r.gx, r.gz));
-        }, player.getName().getString(), player.getUUID(), player::sendSystemMessage);
+        }, player.getName().getString(), player.getUUID(), player::sendSystemMessage, RailPlannerItem.parallel(RailPlannerItem.held(player)), TrackPlanner.SPACING);
     }
 }

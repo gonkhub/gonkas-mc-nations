@@ -33,6 +33,8 @@ public final class Planner {
          *  route search is rerun with such valleys marked (valley per block of track) to look for a way round */
         public int comfortLift = 5, valleyPasses = 3;
         public double liftSteep = 2.0, valley = 6.0;
+        /** A parallel line: per block of track, per block it strays from the spacing; per block of height off the first line. */
+        public double follow = 3.0, followHeight = 8.0;
         /** blocks cleared above the rails for trains; a cutting deeper than this is priced as a tunnel */
         public int clearance = 5;
     }
@@ -60,6 +62,10 @@ public final class Planner {
     private final Weights w;
     /** per column: extra route cost for valleys the line had to float high over in an earlier pass */
     private final Long2DoubleOpenHashMap valley = new Long2DoubleOpenHashMap();
+    /** Planning a parallel line: distance from every column near the first line to it, and its height there. */
+    private Long2DoubleOpenHashMap followDist;
+    private it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap followY;
+    private double spacing;
 
     public Planner(ServerLevel level, Terrain.Mode mode, Weights weights) {
         this.level = level;
@@ -80,6 +86,44 @@ public final class Planner {
      */
     public Plan plan(BlockPos start, int startDirs, BlockPos goal) {
         return plan(new LineEnd(start, startDirs, false, false), LineEnd.free(goal));
+    }
+
+    /**
+     * A second line alongside a planned one, spacing blocks apart centre to centre, on its right (side 1) or
+     * left (-1). It is planned with the same Create-legal moves, kept at the spacing and the first line's
+     * heights by cost, and never closer than spacing - 1; so where the first line turns, the inner line takes
+     * its own legal curve rather than an impossibly tight copy. It starts and ends exactly beside the first line.
+     */
+    public Plan planParallel(Plan orig, int side, int spacing) {
+        this.spacing = spacing;
+        followDist = new Long2DoubleOpenHashMap();
+        followY = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
+        int r = spacing + 5;
+        for (int i = 0; i < orig.moves().size(); i++) {
+            Anchor a = orig.anchors().get(i), c = orig.anchors().get(i + 1);
+            Move m = orig.moves().get(i);
+            int[][] s = m.samples();
+            for (int j = -1; j < s.length; j++) {
+                double px = a.x() + (j < 0 ? 0 : s[j][0]), pz = a.z() + (j < 0 ? 0 : s[j][1]);
+                int py = (int) Math.round(a.y() + (c.y() - a.y()) * (j + 1) / (double) s.length);
+                for (int ox = -r; ox <= r; ox++) for (int oz = -r; oz <= r; oz++) {
+                    double d = Math.hypot(ox, oz);
+                    if (d > r) continue;
+                    long k = net.minecraft.world.level.ChunkPos.asLong((int) px + ox, (int) pz + oz);
+                    if (!followDist.containsKey(k) || d < followDist.get(k)) { followDist.put(k, d); followY.put(k, py); }
+                }
+            }
+        }
+        Anchor s0 = orig.anchors().get(0), g0 = orig.anchors().get(orig.anchors().size() - 1);
+        BlockPos start = beside(s0, side, spacing), goal = beside(g0, side, spacing);
+        return plan(new LineEnd(start, 1 << s0.dir(), false, false), new LineEnd(goal, 1 << ((g0.dir() + 4) & 7), false, false));
+    }
+
+    /** The point spacing blocks to one side of an anchor, square to its heading. */
+    static BlockPos beside(Anchor a, int side, int spacing) {
+        int[] p = Moves.DIR[Math.floorMod(a.dir() + 2 * side, 8)];
+        int k = a.dir() % 2 == 0 ? spacing : (int) Math.round(spacing / Math.sqrt(2));
+        return new BlockPos(a.x() + p[0] * k, a.y(), a.z() + p[1] * k);
     }
 
     /** A line between two ends; an end on existing track is joined exactly (see LineEnd). */
@@ -123,6 +167,13 @@ public final class Planner {
             }
         }
         boolean[] band = new boolean[cw * ch];
+        if (followDist != null) {
+            // a parallel line keeps to the first line's surroundings
+            for (long k : followDist.keySet()) {
+                int ci = Math.floorDiv(net.minecraft.world.level.ChunkPos.getX(k), CELL) - cx0, cj = Math.floorDiv(net.minecraft.world.level.ChunkPos.getZ(k), CELL) - cz0;
+                if (ci >= 0 && cj >= 0 && ci < cw && cj < ch) band[ci * ch + cj] = true;
+            }
+        } else
         for (int c = sCell; ; c = prev[c]) {
             int ci = c / ch, cj = c % ch;
             for (int i = -BAND; i <= BAND; i++) for (int j = -BAND; j <= BAND; j++) {
@@ -157,7 +208,7 @@ public final class Planner {
         stage = "choosing a route";
         Plan bestPlan = null;
         double bestTotal = Double.POSITIVE_INFINITY;
-        for (int pass = 0; pass < w.valleyPasses; pass++) {
+        for (int pass = 0; pass < (followDist != null ? 1 : w.valleyPasses); pass++) {
             Plan p = attempt(from, to, cx0, cz0, cw, ch, band, h, maxLen, st);
             if (p == null) break;
             st.passes = pass + 1;
@@ -206,7 +257,7 @@ public final class Planner {
         int startDirs = first.dirs();
         int sx = start.getX(), sz = start.getZ(), gx = goal.getX(), gz = goal.getZ();
         // joining existing track at the goal: the line has to end exactly on it, arriving along its axis
-        boolean exact = last.onTrack();
+        boolean exact = last.dirs() != -1;
         int arrive = last.arrivalDirs();
         double bestFinish = Double.POSITIVE_INFINITY;
         List<Move> finish = null;
@@ -405,6 +456,13 @@ public final class Planner {
             c += Math.abs(g - prev) * w.rough;
             if (terrain.wet(sx, sz)) c += step * w.water;
             if (withValleys && !valley.isEmpty()) c += step * valley.get(net.minecraft.world.level.ChunkPos.asLong(sx, sz));
+            if (followDist != null) {
+                long k = net.minecraft.world.level.ChunkPos.asLong(sx, sz);
+                if (!followDist.containsKey(k)) return Double.POSITIVE_INFINITY;
+                double d = followDist.get(k);
+                if (d < spacing - 1) return Double.POSITIVE_INFINITY;   // onto the first line's gauge
+                c += step * Math.abs(d - spacing) * w.follow;
+            }
             prev = g;
         }
         return c;
@@ -434,6 +492,10 @@ public final class Planner {
             } else if (above < 0) {
                 double depth = -above;
                 c += step * (depth <= w.clearance ? depth * w.cut : w.tunnel + w.clearance * w.cut);
+            }
+            if (followY != null) {
+                long k = net.minecraft.world.level.ChunkPos.asLong(sx, sz);
+                if (followY.containsKey(k)) c += step * Math.abs(ty - followY.get(k)) * w.followHeight;
             }
         }
         return c;

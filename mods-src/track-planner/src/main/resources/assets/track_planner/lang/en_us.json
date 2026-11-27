@@ -2,5 +2,6 @@
   "item.track_planner.rail_planner": "Rail Planner",
   "block.track_planner.track_layer": "Track Layer",
   "key.categories.track_planner": "Track Planner",
-  "key.track_planner.toggle_build": "Toggle Rail Planner building"
+  "key.track_planner.toggle_build": "Rail Planner: building on or off",
+  "key.track_planner.cycle_parallel": "Rail Planner: single or double track"
 }
