@@ -121,6 +121,8 @@ public record Blueprint(int id, String owner, BlockPos start, BlockPos goal, Lis
         CompoundTag t = new CompoundTag();
         t.putInt("id", id);
         t.putString("owner", owner);
+        t.putDouble("length", length);
+        t.putInt("trackItems", trackItems);
         ListTag ps = new ListTag();
         ps.addAll(pieces(anchors, moves));
         t.put("pieces", ps);

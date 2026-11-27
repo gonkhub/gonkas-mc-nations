@@ -31,8 +31,14 @@ public final class GhostTrackRenderer {
     static final int R = 120, G = 205, B = 255;
     static final double VIEW_DISTANCE = 192;
 
-    /** One planned line: points along the rails (at the track bed) and its two ends. */
-    record Line(List<Vec3> points, Vec3 start, Vec3 end) {}
+    /** One planned line: points along the rails (at the track bed), its two ends, and what to label it with. */
+    public record Line(int id, String owner, double length, int trackItems, List<Vec3> points, Vec3 start, Vec3 end) {}
+
+    /** The current blueprints as lines, rebuilt when a new set arrives. Also used by the world map overlay. */
+    public static List<Line> lines() {
+        if (builtFor != BlueprintsPayload.version) { builtFor = BlueprintsPayload.version; rebuild(); }
+        return lines;
+    }
 
     static int builtFor = -1;
     static List<Line> lines = List.of();
@@ -57,7 +63,9 @@ public final class GhostTrackRenderer {
                     pts.add(Vec3.atBottomCenterOf(bc.bePositions.getSecond()));
                 }
             }
-            if (pts.size() >= 2) out.add(new Line(pts, pts.get(0), pts.get(pts.size() - 1)));
+            CompoundTag bp = (CompoundTag) bt;
+            if (pts.size() >= 2)
+                out.add(new Line(bp.getInt("id"), bp.getString("owner"), bp.getDouble("length"), bp.getInt("trackItems"), pts, pts.get(0), pts.get(pts.size() - 1)));
         }
         lines = out;
     }
@@ -65,8 +73,7 @@ public final class GhostTrackRenderer {
     @SubscribeEvent
     static void render(RenderLevelStageEvent e) {
         if (e.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
-        if (builtFor != BlueprintsPayload.version) { builtFor = BlueprintsPayload.version; rebuild(); }
-        if (lines.isEmpty()) return;
+        if (lines().isEmpty()) return;
 
         Vec3 cam = e.getCamera().getPosition();
         PoseStack pose = e.getPoseStack();

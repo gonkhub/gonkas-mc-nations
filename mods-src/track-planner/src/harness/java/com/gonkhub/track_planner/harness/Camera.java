@@ -5,6 +5,7 @@ import com.gonkhub.track_planner.Blueprint;
 import com.gonkhub.track_planner.Moves;
 import com.gonkhub.track_planner.Planner;
 import com.gonkhub.track_planner.Terrain;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.client.Screenshot;
@@ -74,6 +75,7 @@ public final class Camera {
             next(mc, server);
             return;
         }
+        if (mapPhase >= 0) { mapTick(mc, server); return; }
         if (index >= views.size()) return;
         wait++;
         // wait until every section in view is built and stays built for 2 s, at most 200 s
@@ -106,13 +108,46 @@ public final class Camera {
             out.add(new View("ghost_" + (++i), cx, cy, cz, yaw, pitch));
         }
         System.out.println("[camera] ghost blueprint #" + b.id() + " planned, " + out.size() + " views");
+        Planner.Anchor mid = b.anchors().get(b.anchors().size() / 2);
+        mapCenter = mid.pos();
         return out;
+    }
+
+    static int mapPhase = -1, mapWait;
+    static volatile BlockPos mapCenter;
+
+    /** Opens Xaero's World Map with its own key, lets it load, and takes a screenshot of the overlay. */
+    static void mapTick(Minecraft mc, MinecraftServer server) {
+        mapWait++;
+        if (mapPhase == 0 && mapWait > 300) {
+            for (KeyMapping k : mc.options.keyMappings)
+                if (k.getName().equals("gui.xaero_open_map")) KeyMapping.click(k.getKey());
+            System.out.println("[camera] pressed the world map key");
+            mapPhase = 1;
+            mapWait = 0;
+        } else if (mapPhase == 1 && mapWait > 400) {
+            String screen = mc.screen == null ? "none" : mc.screen.getClass().getName();
+            Screenshot.grab(mc.gameDirectory, "map_1.png", mc.getMainRenderTarget(), msg -> {});
+            System.out.println("[camera] map_1 (screen: " + screen + ")");
+            mapPhase = 2;
+            mapWait = 0;
+            mc.execute(mc::stop);
+        }
     }
 
     static void next(Minecraft mc, MinecraftServer server) {
         index++;
         wait = 0;
         settled = 0;
+        if (index >= views.size() && mapCenter != null && Boolean.getBoolean("track_planner.cameraMap") && mapPhase < 0) {
+            // hover over the middle of the blueprint so the map has explored terrain there, then open the map
+            mapPhase = 0;
+            server.execute(() -> {
+                for (ServerPlayer p : server.getPlayerList().getPlayers())
+                    p.teleportTo(server.overworld(), mapCenter.getX() + 0.5, mapCenter.getY() + 40, mapCenter.getZ() + 0.5, 0, 90);
+            });
+            return;
+        }
         if (index >= views.size()) {
             System.out.println("[camera] done");
             mc.execute(mc::stop);
