@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.13.0 - 2026-11-27
+
 - **New worker: the Station Hand.** Hire up to two at each Caravan Station. They do all the
   carrying there: export goods from the Warehouse to the station, imports from the station to
   the Warehouse, food for caravans getting ready to leave, and cargo between the station and
