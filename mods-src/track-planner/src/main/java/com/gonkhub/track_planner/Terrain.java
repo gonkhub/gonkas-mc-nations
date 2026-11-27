@@ -104,7 +104,10 @@ public final class Terrain {
             int min = level.getMinBuildHeight();
             while (y > min) {
                 BlockState st = chunk.getBlockState(p.setY(y));
-                if (!st.getFluidState().isEmpty()) { if (water < 0) water = y; }
+                if (!st.getFluidState().isEmpty()) {
+                    // lava counts one block higher than it is, so the planner keeps an extra block clear of it
+                    if (water < 0) water = st.getFluidState().is(net.minecraft.tags.FluidTags.LAVA) ? y + 1 : y;
+                }
                 else if (!st.isAir() && !st.is(BlockTags.LOGS) && !st.is(BlockTags.LEAVES) && st.blocksMotion()) break;
                 y--;
             }

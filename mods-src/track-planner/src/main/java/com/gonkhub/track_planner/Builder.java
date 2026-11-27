@@ -158,8 +158,8 @@ public final class Builder {
 
     static void clear(ServerLevel level, Result r, BlockPos pos) {
         BlockState st = level.getBlockState(pos);
-        // water is left alone: the planner keeps the track above it, and draining it would flood the cut
-        if (st.isAir() || st.getBlock() instanceof ITrackBlock || st.getBlock() instanceof FakeTrackBlock || !st.getFluidState().isEmpty()) return;
+        // fluid inside the gauge (a cave's water or lava the cut runs into) goes too; the seal below stops more flowing in
+        if (st.isAir() || st.getBlock() instanceof ITrackBlock || st.getBlock() instanceof FakeTrackBlock) return;
         count(r, "removed " + category(st));
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
 
@@ -171,8 +171,8 @@ public final class Builder {
             up.move(Direction.UP);
         }
 
-        // water beside or above the new gap would flow onto the rails: wall it off with what was dug out
-        BlockState seal = st.getBlock() instanceof FallingBlock || !st.isCollisionShapeFullBlock(level, pos)
+        // water or lava beside or above the new gap would flow onto the rails: wall it off with what was dug out
+        BlockState seal = st.getBlock() instanceof FallingBlock || !st.getFluidState().isEmpty() || !st.isCollisionShapeFullBlock(level, pos)
                 ? Blocks.STONE.defaultBlockState() : st;
         for (Direction d : new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP}) {
             BlockPos n = pos.relative(d);

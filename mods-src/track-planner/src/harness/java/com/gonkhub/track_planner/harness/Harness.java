@@ -212,6 +212,7 @@ public final class Harness {
     /** Inspect-only: every Create track block in the loaded chunks of an existing world, nothing is changed. */
     static void inspectWorld(ServerLevel level) {
         int tracks = 0, coveredStraight = 0, curves = 0, samples = 0, buried = 0, wet = 0;
+        BlockPos firstWet = null;
         java.util.Map<String, Integer> what = new java.util.TreeMap<>();
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
         // the harness force-loads every chunk a line passes through, so those are exactly the chunks to check
@@ -234,6 +235,7 @@ public final class Harness {
                         else if (above.blocksMotion() && !(above.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock)) { buried++; what.merge("covered by " + above.getBlock().getName().getString(), 1, Integer::sum); }
                         if (!st.getFluidState().isEmpty()) {
                             wet++;
+                            if (firstWet == null) firstWet = p.immutable();
                             if (wet <= 8) log.printf("   wet rail at %s: %s, source=%s, track block here=%s%n", p.set(Math.floor(at.x), Math.floor(at.y + 0.05), Math.floor(at.z)).toShortString(),
                                     st.getBlock().getName().getString(), st.getFluidState().isSource(), st.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock || st.getBlock() instanceof com.simibubi.create.content.trains.track.FakeTrackBlock);
                         }
@@ -255,6 +257,19 @@ public final class Harness {
                     }
                 }
             }
+        }
+        // around the first wet rail: every fluid within 6 blocks, and whether the sky is open above it
+        if (firstWet != null) {
+            log.println("fluids within 6 blocks of " + firstWet.toShortString() + " (dx,dy,dz kind source level sky):");
+            for (int dx = -6; dx <= 6; dx++) for (int dy = -3; dy <= 6; dy++) for (int dz = -6; dz <= 6; dz++) {
+                BlockPos q = firstWet.offset(dx, dy, dz);
+                var fs = level.getFluidState(q);
+                if (!fs.isEmpty()) log.printf("   %d,%d,%d %s src=%s lvl=%d sky=%s%n", dx, dy, dz, fs.getType().builtInRegistryHolder().key().location().getPath(),
+                        fs.isSource(), fs.getAmount(), level.canSeeSky(q));
+            }
+            StringBuilder col = new StringBuilder();
+            for (int dy = -3; dy <= 6; dy++) col.append(dy).append('=').append(level.getBlockState(firstWet.offset(0, dy, 0)).getBlock().getName().getString()).append("  ");
+            log.println("column: " + col);
         }
         log.printf("inspect-only: %d track blocks, %d of them with a solid block on top; %d curves, %d samples, %d buried or covered, %d in water%n",
                 tracks, coveredStraight, curves, samples, buried, wet);
