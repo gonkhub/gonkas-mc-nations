@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.12.1 - 2026-11-26
+
 - **Orders from the Imports tab now fill.** An order ships right away, whatever the amount,
   from the nearest colony that has the goods at its Caravan Station. If none does, the nearest
   colony whose Warehouse holds them fetches them to its Station and sends them on. Each order
