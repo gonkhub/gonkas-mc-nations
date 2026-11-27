@@ -29,7 +29,7 @@ public class TrackLayerBlock extends Block implements EntityBlock {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
-        lines.add(Component.literal("Put it on a train with track and tools in the train's chests").withStyle(ChatFormatting.GRAY));
-        lines.add(Component.literal("Builds your blueprint ahead as the train runs along it").withStyle(ChatFormatting.DARK_GRAY));
+        lines.add(Component.literal("Put it on a train with track in the train's chests").withStyle(ChatFormatting.GRAY));
+        lines.add(Component.literal("Lays your blueprint's track as the train reaches it; drills on the train clear the way").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

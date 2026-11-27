@@ -58,7 +58,6 @@ public final class SurvivalBuilder {
     public static final double REACH = 20;
     public static final int EVERY = 10;
 
-    /** What happened on one attempt, for the player and for tests. */
     /**
      * What happened on one attempt, for the player and for tests. distance: how far the piece it tried
      * (or built) is from the builder; Double.MAX_VALUE when there was nothing within reach.
@@ -99,6 +98,14 @@ public final class SurvivalBuilder {
      * paid for from the supplies. Players and track-laying trains both come through here.
      */
     public static Outcome buildNear(ServerLevel level, Vec3 at, Supplies sup, double reach) {
+        return buildNear(level, at, sup, reach, true);
+    }
+
+    /**
+     * As above; with dig false only the track is laid (what the train car does): nothing in the way is dug,
+     * the track goes through it, and the train's own drills clear it as it goes.
+     */
+    public static Outcome buildNear(ServerLevel level, Vec3 at, Supplies sup, double reach, boolean dig) {
         ServerPlayer p = sup.actor();
         Blueprints all = Blueprints.get(level.getServer());
         Blueprint best = null;
@@ -113,7 +120,7 @@ public final class SurvivalBuilder {
             }
         }
         if (best == null) return new Outcome(false, null, Double.MAX_VALUE);
-        String why = tryBuild(level, best, bestMove, sup);
+        String why = tryBuild(level, best, bestMove, sup, dig);
         if (why != null) return new Outcome(false, "Blueprint #" + best.id() + ": " + why, bestDist);
         all.markBuilt(best, bestMove);
         Anchor end = best.anchors().get(bestMove + 1);
@@ -146,6 +153,11 @@ public final class SurvivalBuilder {
      * (and then nothing in the world has changed).
      */
     public static String tryBuild(ServerLevel level, Blueprint b, int i, Supplies sup) {
+        return tryBuild(level, b, i, sup, true);
+    }
+
+    /** As above; with digging false, only track: no clearing, and no tools needed. */
+    public static String tryBuild(ServerLevel level, Blueprint b, int i, Supplies sup, boolean digging) {
         ServerPlayer p = sup.actor();
         Anchor a = b.anchors().get(i), c = b.anchors().get(i + 1);
         Move m = b.moves().get(i);
@@ -183,7 +195,16 @@ public final class SurvivalBuilder {
             }
         }
         List<BlockPos> toDig = new ArrayList<>();
+        if (!digging) dig.clear();
         for (BlockPos pos : dig) if (needsDigging(level.getBlockState(pos))) toDig.add(pos);
+        // laying track only: the track blocks themselves still take the place of whatever is where they go (the
+        // anchors, and every block of a level straight, which Create won't place into solid ground); a curve
+        // passes through the ground and the train's drills clear it
+        List<BlockPos> replaced = new ArrayList<>();
+        if (!digging) {
+            Set<BlockPos> cells = Blueprint.isLevelStraight(m, a, c) ? place : Set.of(a.pos(), c.pos());
+            for (BlockPos pos : cells) if (needsDigging(level.getBlockState(pos))) replaced.add(pos);
+        }
         // sand and gravel resting on what goes would fall onto the rails
         for (BlockPos pos : new ArrayList<>(toDig)) {
             BlockPos up = pos.above();
@@ -202,6 +223,13 @@ public final class SurvivalBuilder {
             if (!level.mayInteract(p, pos) || NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, st, p)).isCanceled())
                 return "can't dig " + name(st) + " at " + pos.toShortString() + " (protected)";
             if (st.getDestroySpeed(level, pos) < 0) return "can't dig through " + name(st) + " at " + pos.toShortString();
+        }
+        for (BlockPos pos : replaced) {
+            BlockState st = level.getBlockState(pos);
+            if (st.getDestroySpeed(level, pos) < 0) return "can't lay track through " + name(st) + " at " + pos.toShortString();
+            if (!st.getFluidState().isEmpty() && st.canBeReplaced()) continue;
+            if (NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, st, p)).isCanceled())
+                return "the track would go into protected land at " + pos.toShortString();
         }
 
         // ---- can they pay? ----
@@ -237,6 +265,14 @@ public final class SurvivalBuilder {
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
             seal(level, pos, st, dig);
         }
+        for (BlockPos pos : replaced) {
+            BlockState st = level.getBlockState(pos);
+            if (!creative && st.getFluidState().isEmpty())
+                for (ItemStack drop : Block.getDrops(st, level, pos, level.getBlockEntity(pos), p, ItemStack.EMPTY)) sup.give(drop);
+            if (!Blueprint.isLevelStraight(m, a, c)) continue;   // anchors: the track block goes straight in
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+            seal(level, pos, st, Set.of());
+        }
         BlockState base = track instanceof BlockItem bi ? bi.getBlock().defaultBlockState() : AllBlocks.TRACK.getDefaultState();
         for (Anchor an : new Anchor[]{a, c})
             if (Builder.setTrack(level, an, base) && !creative) sup.take(track, 1);
@@ -247,7 +283,8 @@ public final class SurvivalBuilder {
         // the curve as Create laid it may pass a little off the prediction, and where it meets a slope built
         // earlier Create tilts the joint and reshapes that earlier curve too: clear along every curve touching
         // either end, whichever end Create stores it on
-        for (Anchor an : new Anchor[]{a, c})
+        if (digging)
+          for (Anchor an : new Anchor[]{a, c})
             if (level.getBlockEntity(an.pos()) instanceof TrackBlockEntity tbe)
                 for (BezierConnection bc : tbe.getConnections().values())
                     Builder.clearAlong(level, r, bc, w.clearance);

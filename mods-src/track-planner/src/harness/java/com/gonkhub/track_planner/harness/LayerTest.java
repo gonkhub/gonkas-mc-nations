@@ -69,9 +69,10 @@ final class LayerTest {
             else if (!st.is(AllBlocks.TRACK.asItem())) loot += st.getCount();
         }
         log.printf("stocked run: built %d of %d pieces, brakes asked %d times, blueprint finished and removed: %s%n", built, n, brakes, all.byId(b.id()) == null);
-        log.printf("from storage: %d track (estimate %d), %d tool durability; %d items dug up went into storage%n",
+        log.printf("from storage: %d track (estimate %d), %d tool durability (expect 0: it only lays track); %d items from blocks the anchors replaced%n",
                 trackBefore - count(stock, AllBlocks.TRACK.asItem()), b.trackItems(), wear, loot);
 
+        log.println("(blocks in the way are left for the train's drills, so buried rails are expected here)");
         Harness.inspect(level, b.plan(), real);
         for (var an : b.anchors()) level.setChunkForced(an.x() >> 4, an.z() >> 4, true);
         Vec3 va = Vec3.atBottomCenterOf(b.anchors().get(0).pos()), vb = Vec3.atBottomCenterOf(b.anchors().get(n).pos());
