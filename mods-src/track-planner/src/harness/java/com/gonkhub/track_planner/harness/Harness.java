@@ -92,7 +92,7 @@ public final class Harness {
         long tl = System.nanoTime();
         double errSum = 0; int errMax = 0, errN = 0;
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(OUT.resolve(c.name() + "_line.csv")))) {
-            pw.println("i,x,z,track_y,ground_planned,ground_real,water_real");
+            pw.println("i,x,z,track_y,ground_planned,ground_real,water_real,water_planned");
             int idx = 0;
             for (int i = 0; i < mv.size(); i++) {
                 Anchor a = an.get(i), b = an.get(i + 1);
@@ -101,7 +101,8 @@ public final class Harness {
                     int x = a.x() + s[j][0], z = a.z() + s[j][1];
                     double ty = a.y() + (b.y() - a.y()) * (j + 1) / (double) s.length;
                     int gp = planner.terrain().ground(x, z), gr = real.ground(x, z), wr = real.water(x, z);
-                    pw.printf("%d,%d,%d,%.2f,%d,%d,%d%n", idx++, x - sx, z - sz, ty, gp, gr, wr == Integer.MIN_VALUE ? -999 : wr);
+                    int wp = planner.terrain().water(x, z);
+                    pw.printf("%d,%d,%d,%.2f,%d,%d,%d,%d%n", idx++, x - sx, z - sz, ty, gp, gr, wr == Integer.MIN_VALUE ? -999 : wr, wp == Integer.MIN_VALUE ? -999 : wp);
                     int err = Math.abs(gp - gr); errSum += err; errN++; errMax = Math.max(errMax, err);
                 }
             }
