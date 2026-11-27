@@ -17,6 +17,11 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
+- _nothing yet_
+
+
+## 0.13.1 - 2026-11-27
+
 - **Fishing is now Tide.** Aquaculture 2 is gone, replaced by Tide (100+ new fish, a catch
   minigame, new rods, bait and an Angling Table). Tide fish go on the Farmer's Delight cutting
   board for fish slices, which work in fish stew and the other seafood recipes.
