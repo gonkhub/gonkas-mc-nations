@@ -70,6 +70,16 @@ public final class Moves {
         }
     }
 
+    /** A straight of k steps on heading d, of any length (the planner's exact finish onto existing track). */
+    public static Move straight(int d, int k) {
+        int[] u = DIR[d];
+        double run = k * Math.hypot(u[0], u[1]);
+        int maxDy = 0;
+        for (int dy = 1; dy < 64; dy++)
+            if (run - 1 >= Math.max(dy < 4 ? dy * 4 : dy * 3, 6)) maxDy = dy;
+        return new Move(Kind.STRAIGHT, d, u[0] * k, u[1] * k, d, run, maxDy, line(u[0] * k, u[1] * k));
+    }
+
     static int[][] line(int x1, int z1) {
         int n = Math.max(Math.abs(x1), Math.abs(z1));
         int[][] s = new int[n][];

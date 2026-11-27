@@ -56,7 +56,8 @@ public final class Harness {
             new Case("b1_blueprint", -20, -20, -260, 140, true),
             new Case("a4_async_3km", 300, 300, 2800, 1900, false),
             new Case("s1_survival", -60, 220, -330, 420, false),
-            new Case("l1_layer", 200, -150, 520, -420, false));
+            new Case("l1_layer", 200, -150, 520, -420, false),
+            new Case("j1_join", -500, 500, -200, 700, false));
 
     @SubscribeEvent
     static void started(ServerStartedEvent e) throws Exception {
@@ -81,6 +82,11 @@ public final class Harness {
         for (Case c : CASES) {
             if (!only.isEmpty() && !Arrays.asList(only.split(",")).contains(c.name())) continue;
             if (c.async()) { startAsync(level, spawn, c); continue; }
+            if (c.name().startsWith("j")) {
+                try { JoinTest.run(level, spawn, c.name(), c.sx(), c.sz(), c.gx(), c.gz(), log); }
+                catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
+                continue;
+            }
             if (c.name().startsWith("l")) {
                 try { LayerTest.run(level, spawn, c.name(), c.sx(), c.sz(), c.gx(), c.gz(), log); }
                 catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
@@ -375,7 +381,7 @@ public final class Harness {
                 start.toShortString(), goal.toShortString(), Math.hypot(gx - sx, gz - sz));
         asyncPending = true;
         asyncStart = System.nanoTime();
-        com.gonkhub.track_planner.PlanJobs.submit(level, () -> new com.gonkhub.track_planner.PlanJobs.Ends(start, -1, goal), "harness", null,
+        com.gonkhub.track_planner.PlanJobs.submit(level, () -> com.gonkhub.track_planner.PlanJobs.Ends.free(start, goal), "harness", null,
                 m -> log.println("planner said: " + m.getString())).thenAccept(b -> {
             asyncPending = false;
             double secs = (System.nanoTime() - asyncStart) / 1e9;

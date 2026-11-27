@@ -67,35 +67,7 @@ public record MapPlanRequest(int sx, int sz, int gx, int gz) implements CustomPa
         player.sendSystemMessage(Component.literal(String.format("Track Planner: planning a %.0f-block line in the background...", distance)).withStyle(ChatFormatting.GRAY));
         // finding the two ends loads their chunks, so it happens on the planner thread with the rest
         PlanJobs.submit(level, () -> {
-            LineEnd start = end(level, r.sx, r.sz), goal = end(level, r.gx, r.gz);
-            return new PlanJobs.Ends(start.pos(), start.dirs(), goal.pos());
+            return new PlanJobs.Ends(LineEnd.column(level, r.sx, r.sz), LineEnd.column(level, r.gx, r.gz));
         }, player.getName().getString(), player.getUUID(), player::sendSystemMessage);
-    }
-
-    /** A line end: the track block position, the headings it may leave on, and whether it's an existing track. */
-    record LineEnd(BlockPos pos, int dirs, boolean onTrack) {
-        String describe() { return pos.toShortString() + (onTrack ? " (existing track)" : ""); }
-    }
-
-    /** The top of the clicked column: an existing Create track there (and its directions), else just above the ground. */
-    static LineEnd end(ServerLevel level, int x, int z) {
-        level.getChunk(x >> 4, z >> 4);
-        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-        for (int y = top + 1; y >= top - 3; y--) {
-            BlockPos p = new BlockPos(x, y, z);
-            BlockState st = level.getBlockState(p);
-            if (st.getBlock() instanceof ITrackBlock && st.hasProperty(TrackBlock.SHAPE)) {
-                int dirs = switch (st.getValue(TrackBlock.SHAPE)) {
-                    case XO -> 1 << 0 | 1 << 4;
-                    case ZO -> 1 << 2 | 1 << 6;
-                    case PD -> 1 << 1 | 1 << 5;
-                    case ND -> 1 << 3 | 1 << 7;
-                    default -> -1;
-                };
-                return new LineEnd(p, dirs, true);
-            }
-        }
-        Terrain t = new Terrain(level, Terrain.Mode.LOAD_CHUNKS);
-        return new LineEnd(new BlockPos(x, t.surface(x, z) + 1, z), -1, false);
     }
 }

@@ -79,6 +79,12 @@ public final class Planner {
      * @param startDirs headings the line may leave start on, as a bit mask (bit d = Moves.DIR[d]); -1 for any
      */
     public Plan plan(BlockPos start, int startDirs, BlockPos goal) {
+        return plan(new LineEnd(start, startDirs, false, false), LineEnd.free(goal));
+    }
+
+    /** A line between two ends; an end on existing track is joined exactly (see LineEnd). */
+    public Plan plan(LineEnd from, LineEnd to) {
+        BlockPos start = from.pos(), goal = to.pos();
         Stats st = new Stats();
         int sx = start.getX(), sz = start.getZ(), gx = goal.getX(), gz = goal.getZ();
 
@@ -152,7 +158,7 @@ public final class Planner {
         Plan bestPlan = null;
         double bestTotal = Double.POSITIVE_INFINITY;
         for (int pass = 0; pass < w.valleyPasses; pass++) {
-            Plan p = attempt(start, startDirs, goal, cx0, cz0, cw, ch, band, h, maxLen, st);
+            Plan p = attempt(from, to, cx0, cz0, cw, ch, band, h, maxLen, st);
             if (p == null) break;
             st.passes = pass + 1;
             // compare passes on the same terms: the line's own cost plus its height profile, no valley marks
@@ -194,9 +200,17 @@ public final class Planner {
     }
 
     /** One pass of stage 1 (route, avoiding marked valleys) and stage 2 (heights). Null when nothing fits. */
-    private Plan attempt(BlockPos start, int startDirs, BlockPos goal, int cx0, int cz0, int cw, int ch, boolean[] band,
+    private Plan attempt(LineEnd first, LineEnd last, int cx0, int cz0, int cw, int ch, boolean[] band,
                          java.util.function.ToDoubleBiFunction<Integer, Integer> h, int maxLen, Stats st) {
+        BlockPos start = first.pos(), goal = last.pos();
+        int startDirs = first.dirs();
         int sx = start.getX(), sz = start.getZ(), gx = goal.getX(), gz = goal.getZ();
+        // joining existing track at the goal: the line has to end exactly on it, arriving along its axis
+        boolean exact = last.onTrack();
+        int arrive = last.arrivalDirs();
+        double bestFinish = Double.POSITIVE_INFINITY;
+        List<Move> finish = null;
+        int sinceFinish = 0;
         long t1 = System.nanoTime();
         Long2DoubleOpenHashMap best = new Long2DoubleOpenHashMap();
         best.defaultReturnValue(Double.POSITIVE_INFINITY);
@@ -215,11 +229,25 @@ public final class Planner {
             long k = key(x, z, d, sx, sz);
             if (e[1] > best.get(k)) continue;
             expanded++;
-            if (Math.abs(x - gx) <= 4 && Math.abs(z - gz) <= 4) { goalNode = e; break; }
+            boolean atStart = x == sx && z == sz && e[1] == 0;
+            boolean mustTurn = atStart && first.turnOnly();
+            if (exact) {
+                if (e[0] >= bestFinish || (finish != null && ++sinceFinish > 50_000)) break;   // nothing (much) cheaper follows
+                if (Math.max(Math.abs(x - gx), Math.abs(z - gz)) <= FINISH_RANGE) {
+                    List<Move> f = finish(x, z, d, gx, gz, arrive, mustTurn, last.turnOnly(), maxLen);
+                    if (f != null) {
+                        double c = e[1];
+                        int fx = x, fz = z;
+                        for (Move m : f) { c += routeCost(fx, fz, m, true); fx += m.dx(); fz += m.dz(); }
+                        if (c < bestFinish) { bestFinish = c; goalNode = e; finish = f; }
+                    }
+                }
+            } else if (Math.abs(x - gx) <= 4 && Math.abs(z - gz) <= 4) { goalNode = e; break; }
             if (expanded > 2_000_000) break;
             List<Move> moves = Moves.MOVES.get(d);
             for (int mi = 0; mi < moves.size(); mi++) {
                 Move m = moves.get(mi);
+                if (mustTurn && m.kind() == Moves.Kind.STRAIGHT) continue;   // branching off existing track
                 if (m.dx() * m.dx() + m.dz() * m.dz() > (maxLen - 1) * (maxLen - 1)) continue; // Create's placement length limit
                 int nx = x + m.dx(), nz = z + m.dz();
                 int ci = Math.floorDiv(nx, CELL) - cx0, cj = Math.floorDiv(nz, CELL) - cz0;
@@ -251,14 +279,19 @@ public final class Planner {
         }
         Collections.reverse(xz);
         Collections.reverse(moves);
+        if (finish != null) {
+            int[] tail = xz.get(xz.size() - 1);
+            int fx = tail[0], fz = tail[1];
+            for (Move m : finish) { fx += m.dx(); fz += m.dz(); moves.add(m); xz.add(new int[]{fx, fz, m.endDir()}); }
+        }
 
         // stage 2: height profile
         long t2 = System.nanoTime();
         int n = xz.size();
         int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE;
         for (int[] a : xz) { int s = terrain.surface(a[0], a[1]); lo = Math.min(lo, s); hi = Math.max(hi, s); }
-        lo = Math.max(level.getMinBuildHeight() + 2, Math.min(lo, start.getY()) - 32);
-        hi = Math.min(level.getMaxBuildHeight() - 8, Math.max(hi, start.getY()) + 32);
+        lo = Math.max(level.getMinBuildHeight() + 2, Math.min(lo, Math.min(start.getY(), goal.getY())) - 32);
+        hi = Math.min(level.getMaxBuildHeight() - 8, Math.max(hi, Math.max(start.getY(), goal.getY())) + 32);
         int H = hi - lo + 1;
         double[][] dp = new double[n][H];
         int[][] from = new int[n][H];
@@ -281,6 +314,7 @@ public final class Planner {
         int by = -1;
         double bc = Double.POSITIVE_INFINITY;
         for (int y = 0; y < H; y++) {
+            if (exact && y + lo != goal.getY()) continue;   // the existing track's own height
             double c = dp[n - 1][y] + Math.abs(y + lo - goal.getY()) * w.goalHeight;
             if (c < bc) { bc = c; by = y; }
         }
@@ -295,6 +329,65 @@ public final class Planner {
         List<Anchor> anchors = new ArrayList<>();
         for (int i = 0; i < n; i++) anchors.add(new Anchor(xz.get(i)[0], ys[i] + lo, xz.get(i)[1], xz.get(i)[2]));
         return new Plan(anchors, moves, goal, bc, st);
+    }
+
+    /** How near the goal the search starts trying to finish exactly on it. */
+    static final int FINISH_RANGE = 64;
+
+    /**
+     * Moves from (x, z) on heading d that end exactly at the goal, arriving on one of the allowed headings:
+     * a straight onto it, or a straight, one turn and a straight. Null when none fits. mustTurn: the first
+     * move has to be a turn (branching off existing track at the start); turnLast: the last move has to be one.
+     */
+    static List<Move> finish(int x, int z, int d, int gx, int gz, int arrive, boolean mustTurn, boolean turnLast, int maxLen) {
+        List<Move> best = null;
+        double bestLen = Double.POSITIVE_INFINITY;
+        int[] a = Moves.DIR[d];
+        for (int hd = 0; hd < 8; hd++) {
+            if ((arrive & (1 << hd)) == 0) continue;
+            int[] b = Moves.DIR[hd];
+            if (hd == d && !mustTurn && !turnLast) {
+                int k = steps(gx - x, gz - z, a);
+                if (k > 0) {
+                    List<Move> f = new ArrayList<>();
+                    straights(f, d, k);
+                    double len = f.stream().mapToDouble(Move::length).sum();
+                    if (len < bestLen) { bestLen = len; best = f; }
+                }
+            }
+            for (Move m : Moves.MOVES.get(d)) {
+                if (m.kind() == Moves.Kind.STRAIGHT || m.endDir() != hd) continue;
+                int rx = gx - x - m.dx(), rz = gz - z - m.dz();
+                int det = a[0] * b[1] - a[1] * b[0];
+                if (det == 0) continue;
+                int n1 = rx * b[1] - rz * b[0], n2 = a[0] * rz - a[1] * rx;
+                if (n1 % det != 0 || n2 % det != 0) continue;
+                int k1 = n1 / det, k2 = n2 / det;
+                if (k1 < 0 || k2 < 0 || (mustTurn && k1 > 0) || (turnLast && k2 > 0)) continue;
+                List<Move> f = new ArrayList<>();
+                straights(f, d, k1);
+                f.add(m);
+                straights(f, hd, k2);
+                double len = f.stream().mapToDouble(Move::length).sum();
+                if (len < bestLen) { bestLen = len; best = f; }
+            }
+        }
+        return best;
+    }
+
+    /** k when (rx, rz) is exactly k >= 0 steps of u, else -1. */
+    static int steps(int rx, int rz, int[] u) {
+        int k = u[0] != 0 ? rx / u[0] : rz / u[1];
+        return k >= 0 && rx == u[0] * k && rz == u[1] * k ? k : -1;
+    }
+
+    /** k steps on heading d as straights of at most 32 steps (Create's placement length limit stays well clear). */
+    static void straights(List<Move> out, int d, int k) {
+        while (k > 0) {
+            int n = k > 32 ? (k > 40 ? 32 : k / 2) : k;
+            out.add(Moves.straight(d, n));
+            k -= n;
+        }
     }
 
     private static long key(int x, int z, int d, int ox, int oz) {

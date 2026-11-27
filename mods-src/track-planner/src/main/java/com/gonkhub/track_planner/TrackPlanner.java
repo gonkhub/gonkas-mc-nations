@@ -156,7 +156,7 @@ public final class TrackPlanner {
                                     var src = c.getSource();
                                     src.sendSuccess(() -> Component.literal("Track Planner: planning " + from.toShortString() + " to " + to.toShortString()
                                             + " in the background...").withStyle(ChatFormatting.GRAY), false);
-                                    PlanJobs.submit(src.getLevel(), () -> new PlanJobs.Ends(from, -1, to), src.getTextName(),
+                                    PlanJobs.submit(src.getLevel(), () -> new PlanJobs.Ends(LineEnd.at(src.getLevel(), from), LineEnd.at(src.getLevel(), to)), src.getTextName(),
                                             src.getPlayer() == null ? null : src.getPlayer().getUUID(), m -> src.sendSuccess(() -> m, true));
                                     return 1;
                                 })))

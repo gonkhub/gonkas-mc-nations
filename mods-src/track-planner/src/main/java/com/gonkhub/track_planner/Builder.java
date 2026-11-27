@@ -231,6 +231,7 @@ public final class Builder {
         BlockState st = level.getBlockState(pos);
         // fluid inside the gauge (a cave's water or lava the cut runs into) goes too; the seal below stops more flowing in
         if (st.isAir() || st.getBlock() instanceof ITrackBlock || st.getBlock() instanceof FakeTrackBlock) return;
+        if (level.getBlockEntity(pos) != null) { count(r, "left in place (has contents)"); return; }   // chests, stations, machines
         count(r, "removed " + category(st));
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
 

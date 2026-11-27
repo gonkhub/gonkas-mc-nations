@@ -31,8 +31,10 @@ import java.util.function.Supplier;
 @EventBusSubscriber(modid = TrackPlanner.MOD_ID)
 public final class PlanJobs {
 
-    /** Where a line starts (and the headings it may leave on, bit mask over Moves.DIR; -1 any) and ends. */
-    public record Ends(BlockPos start, int startDirs, BlockPos goal) {}
+    /** Where a line starts and ends; either end may be existing track that the line joins. */
+    public record Ends(LineEnd start, LineEnd goal) {
+        public static Ends free(BlockPos start, BlockPos goal) { return new Ends(LineEnd.free(start), LineEnd.free(goal)); }
+    }
 
     static final class Job {
         final String owner;
@@ -87,11 +89,11 @@ public final class PlanJobs {
                 Ends e = ends.get();
                 Planner planner = new Planner(level, Terrain.Mode.PREFETCH, new Planner.Weights());
                 job.planner = planner;
-                Planner.Plan plan = planner.plan(e.start(), e.startDirs(), e.goal());
+                Planner.Plan plan = planner.plan(e.start(), e.goal());
                 double seconds = (System.nanoTime() - t0) / 1e9;
                 server.execute(() -> {
                     running.remove(job);
-                    done.complete(TrackPlanner.saveBlueprint(level, plan, e.start(), e.goal(), owner, requester, seconds, report));
+                    done.complete(TrackPlanner.saveBlueprint(level, plan, e.start().pos(), e.goal().pos(), owner, requester, seconds, report));
                 });
             } catch (Throwable ex) {
                 LogUtils.getLogger().error("Track Planner: planning failed", ex);

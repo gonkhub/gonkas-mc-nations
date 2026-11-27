@@ -59,7 +59,7 @@ public final class RailPlannerItem extends Item {
         player.displayClientMessage(Component.literal("Planning " + start.toShortString() + " to " + at.toShortString() + " in the background...")
                 .withStyle(ChatFormatting.GRAY), true);
         BlockPos from = start;
-        PlanJobs.submit((ServerLevel) level, () -> new PlanJobs.Ends(from, -1, at), player.getName().getString(), player.getUUID(), player::sendSystemMessage);
+        PlanJobs.submit((ServerLevel) level, () -> new PlanJobs.Ends(LineEnd.at((ServerLevel) level, from), LineEnd.at((ServerLevel) level, at)), player.getName().getString(), player.getUUID(), player::sendSystemMessage);
         return InteractionResult.CONSUME;
     }
 

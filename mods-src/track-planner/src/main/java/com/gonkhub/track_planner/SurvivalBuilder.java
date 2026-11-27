@@ -224,10 +224,13 @@ public final class SurvivalBuilder {
             if (!level.mayInteract(p, pos) || NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, st, p)).isCanceled())
                 return "can't dig " + name(st) + " at " + pos.toShortString() + " (protected)";
             if (st.getDestroySpeed(level, pos) < 0) return "can't dig through " + name(st) + " at " + pos.toShortString();
+            // never dig up somebody's chest, station or machine to make way: they move it
+            if (level.getBlockEntity(pos) != null) return name(st) + " is in the way at " + pos.toShortString();
         }
         for (BlockPos pos : replaced) {
             BlockState st = level.getBlockState(pos);
             if (st.getDestroySpeed(level, pos) < 0) return "can't lay track through " + name(st) + " at " + pos.toShortString();
+            if (level.getBlockEntity(pos) != null) return name(st) + " is in the way at " + pos.toShortString();
             if (!st.getFluidState().isEmpty() && st.canBeReplaced()) continue;
             if (NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, st, p)).isCanceled())
                 return "the track would go into protected land at " + pos.toShortString();
