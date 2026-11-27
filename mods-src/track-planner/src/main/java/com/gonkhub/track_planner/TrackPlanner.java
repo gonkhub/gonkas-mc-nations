@@ -55,7 +55,9 @@ public final class TrackPlanner {
     }
 
     static void payloads(RegisterPayloadHandlersEvent e) {
-        e.registrar("1").playToClient(BlueprintsPayload.TYPE, BlueprintsPayload.STREAM_CODEC, (p, ctx) -> BlueprintsPayload.receive(p));
+        var reg = e.registrar("1");
+        reg.playToClient(BlueprintsPayload.TYPE, BlueprintsPayload.STREAM_CODEC, (p, ctx) -> BlueprintsPayload.receive(p));
+        reg.playToServer(MapPlanRequest.TYPE, MapPlanRequest.STREAM_CODEC, MapPlanRequest::handle);
     }
 
     static void creativeTab(BuildCreativeModeTabContentsEvent e) {
@@ -68,8 +70,13 @@ public final class TrackPlanner {
 
     /** Plans start to goal and saves it as a blueprint. Reports to the given sink. Returns null on failure. */
     public static Blueprint planBlueprint(ServerLevel level, BlockPos start, BlockPos goal, String owner, Consumer<Component> report) {
+        return planBlueprint(level, start, -1, goal, owner, report);
+    }
+
+    /** As above, leaving start only on the given headings (a bit mask over Moves.DIR; -1 for any). */
+    public static Blueprint planBlueprint(ServerLevel level, BlockPos start, int startDirs, BlockPos goal, String owner, Consumer<Component> report) {
         Planner.Weights w = new Planner.Weights();
-        Planner.Plan plan = new Planner(level, Terrain.Mode.PREFETCH, w).plan(start, -1, goal);
+        Planner.Plan plan = new Planner(level, Terrain.Mode.PREFETCH, w).plan(start, startDirs, goal);
         var st = plan.stats();
         if (st.failure != null) {
             report.accept(Component.literal("Track Planner: " + st.failure).withStyle(ChatFormatting.RED));

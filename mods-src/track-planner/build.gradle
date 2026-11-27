@@ -119,6 +119,8 @@ neoForge {
             systemProperty 'track_planner.cameraBlueprint', project.findProperty('cameraBlueprint') ?: ''
             // -PcameraMap=true: after the ghost shots, open Xaero's World Map and shoot the overlay
             systemProperty 'track_planner.cameraMap', project.findProperty('cameraMap') ?: 'false'
+            // -PcameraMapPlan=true: then plan a line by clicking on the map, as a player would
+            systemProperty 'track_planner.cameraMapPlan', project.findProperty('cameraMapPlan') ?: 'false'
             programArguments.addAll '--quickPlaySingleplayer', 'tracks', '--width', '1600', '--height', '900'
         }
         configureEach {

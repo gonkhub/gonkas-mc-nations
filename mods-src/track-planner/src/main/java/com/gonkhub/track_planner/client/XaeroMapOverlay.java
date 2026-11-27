@@ -46,28 +46,9 @@ public final class XaeroMapOverlay {
         if (mc.level == null || mc.level.dimension() != Level.OVERWORLD) return;
         List<GhostTrackRenderer.Line> lines = GhostTrackRenderer.lines();
         if (lines.isEmpty()) return;
-        double camX, camZ, mapScale;
-        try {
-            if (cameraX == null) {
-                cameraX = field(screen.getClass(), "cameraX");
-                cameraZ = field(screen.getClass(), "cameraZ");
-                scale = field(screen.getClass(), "scale");
-            }
-            camX = cameraX.getDouble(screen);
-            camZ = cameraZ.getDouble(screen);
-            mapScale = scale.getDouble(screen);
-        } catch (ReflectiveOperationException | RuntimeException ex) {
-            broken = true;
-            LogUtils.getLogger().warn("Track Planner: can't read Xaero's World Map camera, map overlay off ({})", ex.toString());
-            return;
-        }
-
-        // the same conversion Create's train map uses: map units to GUI pixels
-        Window window = mc.getWindow();
-        double guiScale = (double) window.getScreenWidth() / window.getGuiScaledWidth();
-        double interfaceScale = (double) window.getWidth() / window.getScreenWidth();
-        double s = mapScale / guiScale / interfaceScale;
-        double cx = screen.width / 2.0, cz = screen.height / 2.0;
+        MapView v = view(screen);
+        if (v == null) return;
+        double camX = v.camX(), camZ = v.camZ(), s = v.scale(), cx = v.cx(), cz = v.cz();
 
         GuiGraphics g = e.getGuiGraphics();
         g.pose().pushPose();
@@ -114,6 +95,41 @@ public final class XaeroMapOverlay {
                     Component.literal(String.format("%.0f blocks, about %d track items", hovered.length(), hovered.trackItems())),
                     Component.literal("planned by " + hovered.owner()),
                     Component.literal("/trackplan build " + hovered.id())), mouseX, mouseY);
+    }
+
+    /** Where Xaero's map is looking: world x,z at the screen centre (cx, cz GUI pixels) and GUI pixels per block. */
+    public record MapView(double camX, double camZ, double scale, double cx, double cz) {
+        public double screenX(double worldX) { return (worldX - camX) * scale + cx; }
+        public double screenY(double worldZ) { return (worldZ - camZ) * scale + cz; }
+        public double worldX(double screenX) { return (screenX - cx) / scale + camX; }
+        public double worldZ(double screenY) { return (screenY - cz) / scale + camZ; }
+    }
+
+    public static boolean isMap(Screen screen) { return !broken && screen != null && screen.getClass().getName().equals(GUI_MAP); }
+
+    /** The map's current view, or null when this is not Xaero's map or it can't be read. */
+    public static MapView view(Screen screen) {
+        if (!isMap(screen)) return null;
+        double camX, camZ, mapScale;
+        try {
+            if (cameraX == null) {
+                cameraX = field(screen.getClass(), "cameraX");
+                cameraZ = field(screen.getClass(), "cameraZ");
+                scale = field(screen.getClass(), "scale");
+            }
+            camX = cameraX.getDouble(screen);
+            camZ = cameraZ.getDouble(screen);
+            mapScale = scale.getDouble(screen);
+        } catch (ReflectiveOperationException | RuntimeException ex) {
+            broken = true;
+            LogUtils.getLogger().warn("Track Planner: can't read Xaero's World Map camera, map overlay off ({})", ex.toString());
+            return null;
+        }
+        // the same conversion Create's train map uses: map units to GUI pixels
+        Window window = Minecraft.getInstance().getWindow();
+        double guiScale = (double) window.getScreenWidth() / window.getGuiScaledWidth();
+        double interfaceScale = (double) window.getWidth() / window.getScreenWidth();
+        return new MapView(camX, camZ, mapScale / guiScale / interfaceScale, screen.width / 2.0, screen.height / 2.0);
     }
 
     static Field field(Class<?> c, String name) throws NoSuchFieldException {

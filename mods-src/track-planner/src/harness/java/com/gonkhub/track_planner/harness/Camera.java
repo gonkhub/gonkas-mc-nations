@@ -129,10 +129,85 @@ public final class Camera {
             String screen = mc.screen == null ? "none" : mc.screen.getClass().getName();
             Screenshot.grab(mc.gameDirectory, "map_1.png", mc.getMainRenderTarget(), msg -> {});
             System.out.println("[camera] map_1 (screen: " + screen + ")");
-            mapPhase = 2;
+            mapPhase = Boolean.getBoolean("track_planner.cameraMapPlan") ? 10 : 99;
             mapWait = 0;
-            mc.execute(mc::stop);
+            if (mapPhase == 99) mc.execute(mc::stop);
+        } else if (mapPhase >= 10 && mapPhase < 99) {
+            planOnMap(mc);
         }
+    }
+
+    // ---- planning from the map with the real mouse code: button, start, guide line, destination ----
+    static double[] planStart, planGoal;
+    static int versionBefore;
+
+    static void planOnMap(Minecraft mc) {
+        var v = com.gonkhub.track_planner.client.XaeroMapOverlay.view(mc.screen);
+        if (v == null) { System.out.println("[camera] map not open"); mapPhase = 99; mc.execute(mc::stop); return; }
+        if (planStart == null) {
+            planStart = new double[]{v.camX() - 110, v.camZ() + 50};
+            planGoal = new double[]{v.camX() + 95, v.camZ() - 95};
+        }
+        switch (mapPhase) {
+            case 10 -> { mouseTo(mc, com.gonkhub.track_planner.client.MapPlanning.BUTTON_X + 10, com.gonkhub.track_planner.client.MapPlanning.BUTTON_Y + 7); step(15); }
+            case 11 -> { click(mc); step(15); }
+            case 12 -> { mouseTo(mc, v.screenX(planStart[0]), v.screenY(planStart[1])); step(10); }
+            case 13 -> { click(mc); step(10); }
+            case 14 -> {
+                double fx = planStart[0] + (planGoal[0] - planStart[0]) * 0.7, fz = planStart[1] + (planGoal[1] - planStart[1]) * 0.7;
+                mouseTo(mc, v.screenX(fx), v.screenY(fz));
+                step(40);
+            }
+            case 15 -> {
+                Screenshot.grab(mc.gameDirectory, "map_plan_1.png", mc.getMainRenderTarget(), msg -> {});
+                System.out.println("[camera] map_plan_1 (choosing the destination)");
+                step(10);
+            }
+            case 16 -> { mouseTo(mc, v.screenX(planGoal[0]), v.screenY(planGoal[1])); step(10); }
+            case 17 -> { versionBefore = com.gonkhub.track_planner.BlueprintsPayload.version; click(mc); step(0); }
+            case 18 -> {
+                // wait for the new blueprint to arrive, then give the map a moment
+                if (com.gonkhub.track_planner.BlueprintsPayload.version != versionBefore && mapWait > 100 || mapWait > 3000) {
+                    // move the cursor onto the new line so its tooltip shows
+                    mouseTo(mc, v.screenX((planStart[0] + planGoal[0]) / 2), v.screenY((planStart[1] + planGoal[1]) / 2));
+                    step(20);
+                }
+            }
+            case 19 -> {
+                Screenshot.grab(mc.gameDirectory, "map_plan_2.png", mc.getMainRenderTarget(), msg -> {});
+                System.out.println("[camera] map_plan_2 (blueprint arrived: " + (com.gonkhub.track_planner.BlueprintsPayload.version != versionBefore) + ")");
+                mapPhase = 99;
+                mc.execute(mc::stop);
+            }
+            default -> {}
+        }
+    }
+
+    static int stepWait;
+
+    /** Go to the next phase after waiting this many more ticks. */
+    static void step(int ticks) {
+        if (stepWait == 0) stepWait = ticks + 1;
+        if (--stepWait <= 0) { mapPhase++; mapWait = 0; stepWait = 0; }
+    }
+
+    static void mouseTo(Minecraft mc, double guiX, double guiY) {
+        try {
+            double sc = mc.getWindow().getGuiScale();
+            var m = net.minecraft.client.MouseHandler.class.getDeclaredMethod("onMove", long.class, double.class, double.class);
+            m.setAccessible(true);
+            m.invoke(mc.mouseHandler, mc.getWindow().getWindow(), guiX * sc, guiY * sc);
+        } catch (ReflectiveOperationException e) { throw new RuntimeException(e); }
+    }
+
+    static void click(Minecraft mc) {
+        try {
+            var m = net.minecraft.client.MouseHandler.class.getDeclaredMethod("onPress", long.class, int.class, int.class, int.class);
+            m.setAccessible(true);
+            m.invoke(mc.mouseHandler, mc.getWindow().getWindow(), 0, 1, 0);
+            m.invoke(mc.mouseHandler, mc.getWindow().getWindow(), 0, 0, 0);
+            System.out.printf("[camera] clicked at %.0f, %.0f%n", mc.mouseHandler.xpos(), mc.mouseHandler.ypos());
+        } catch (ReflectiveOperationException e) { throw new RuntimeException(e); }
     }
 
     static void next(Minecraft mc, MinecraftServer server) {

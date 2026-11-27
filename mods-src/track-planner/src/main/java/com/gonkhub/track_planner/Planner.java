@@ -70,8 +70,11 @@ public final class Planner {
 
     public Terrain terrain() { return terrain; }
 
-    /** @param start the first track block; @param startDir its heading, or -1 to let the planner choose */
-    public Plan plan(BlockPos start, int startDir, BlockPos goal) {
+    /**
+     * @param start    the first track block
+     * @param startDirs headings the line may leave start on, as a bit mask (bit d = Moves.DIR[d]); -1 for any
+     */
+    public Plan plan(BlockPos start, int startDirs, BlockPos goal) {
         Stats st = new Stats();
         int sx = start.getX(), sz = start.getZ(), gx = goal.getX(), gz = goal.getZ();
 
@@ -142,7 +145,7 @@ public final class Planner {
         Plan bestPlan = null;
         double bestTotal = Double.POSITIVE_INFINITY;
         for (int pass = 0; pass < w.valleyPasses; pass++) {
-            Plan p = attempt(start, startDir, goal, cx0, cz0, cw, ch, band, h, maxLen, st);
+            Plan p = attempt(start, startDirs, goal, cx0, cz0, cw, ch, band, h, maxLen, st);
             if (p == null) break;
             st.passes = pass + 1;
             // compare passes on the same terms: the line's own cost plus its height profile, no valley marks
@@ -184,7 +187,7 @@ public final class Planner {
     }
 
     /** One pass of stage 1 (route, avoiding marked valleys) and stage 2 (heights). Null when nothing fits. */
-    private Plan attempt(BlockPos start, int startDir, BlockPos goal, int cx0, int cz0, int cw, int ch, boolean[] band,
+    private Plan attempt(BlockPos start, int startDirs, BlockPos goal, int cx0, int cz0, int cw, int ch, boolean[] band,
                          java.util.function.ToDoubleBiFunction<Integer, Integer> h, int maxLen, Stats st) {
         int sx = start.getX(), sz = start.getZ(), gx = goal.getX(), gz = goal.getZ();
         long t1 = System.nanoTime();
@@ -193,7 +196,7 @@ public final class Planner {
         Long2ObjectOpenHashMap<long[]> came = new Long2ObjectOpenHashMap<>();
         PriorityQueue<double[]> open = new PriorityQueue<>((a, b) -> Double.compare(a[0], b[0]));
         for (int d = 0; d < 8; d++) {
-            if (startDir >= 0 && d != startDir) continue;
+            if ((startDirs & (1 << d)) == 0) continue;
             best.put(key(sx, sz, d, sx, sz), 0);
             open.add(new double[]{h.applyAsDouble(sx, sz), 0, sx, sz, d});
         }
