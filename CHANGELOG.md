@@ -17,7 +17,14 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **Fishing is now Tide.** Aquaculture 2 is gone, replaced by Tide (100+ new fish, a catch
+  minigame, new rods, bait and an Angling Table). Tide fish go on the Farmer's Delight cutting
+  board for fish slices, which work in fish stew and the other seafood recipes.
+  **Aquaculture items and blocks are removed from the world: Neptunium gear, tackle boxes and
+  everything in them, and fish mounts. Empty your tackle boxes before updating.**
+- **New: Crabber's Delight.** Crab traps you bait and leave underwater, crabs, and new seafood
+  dishes for Farmer's Delight.
+- The old Fishing Overhaul minigame is removed; Tide has its own.
 
 
 ## 0.13.0 - 2026-11-27
