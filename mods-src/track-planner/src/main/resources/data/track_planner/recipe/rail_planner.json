@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " A ",
+    "AMA",
+    " C "
+  ],
+  "key": {
+    "A": { "item": "create:andesite_alloy" },
+    "M": { "item": "minecraft:map" },
+    "C": { "item": "minecraft:compass" }
+  },
+  "result": { "id": "track_planner:rail_planner", "count": 1 }
+}

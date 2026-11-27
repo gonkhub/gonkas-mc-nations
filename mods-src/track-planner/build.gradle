@@ -1,0 +1,203 @@
+import java.security.MessageDigest
+
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+// The harness drives the planner on a headless server and writes a report (./gradlew runHarness).
+// It lives in its own source set so it never ships in the jar.
+sourceSets {
+    harness {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    harnessImplementation.extendsFrom implementation
+    harnessCompileOnly.extendsFrom compileOnly
+}
+
+// ---------------------------------------------------------------------------
+// Create: compile against the EXACT jar the pack ships, fetched from the URL and
+// sha512 in the packwiz index, so this repo never carries the jar itself. The
+// same jar goes into run/mods so the harness server loads it (with its jar-in-jar
+// Flywheel, Ponder and Registrate). None of Create's maven builds is byte-identical
+// to the released jar, which is why this does not use a maven dependency.
+// ---------------------------------------------------------------------------
+// A jar from the packwiz index: its URL (or, for CurseForge-only entries, the CDN path of its file id)
+// and its hash, so what we compile and test against is byte-for-byte what the pack ships.
+def packIndex = { String name ->
+    def text = file("../../minecraft/mods/.index/${name}.pw.toml").text
+    def get = { String key -> def m = (text =~ /(?m)^${key} = '?([^'\n]*)'?/); m.find() ? m.group(1) : '' }
+    def url = get('url')
+    if (!url) {
+        long id = get('file-id') as long
+        url = "https://edge.forgecdn.net/files/${id.intdiv(1000)}/${id % 1000}/${get('filename')}"
+    }
+    [url: url, hash: get('hash'), algo: get('hash-format') == 'sha1' ? 'SHA-1' : 'SHA-512']
+}
+def hashOf = { File f, String algo -> MessageDigest.getInstance(algo).digest(f.bytes).encodeHex().toString() }
+def fetchPackJar = { String name, File dest ->
+    def entry = packIndex(name)
+    if (!dest.exists() || hashOf(dest, entry.algo) != entry.hash) {
+        dest.parentFile.mkdirs()
+        ant.get(src: entry.url, dest: dest)
+        def got = hashOf(dest, entry.algo)
+        if (got != entry.hash) {
+            dest.delete()
+            throw new GradleException("${name} jar hash mismatch: ${got}")
+        }
+    }
+}
+def createJar = file('libs/create.jar')
+
+def fetchCreate = tasks.register('fetchCreate') {
+    outputs.dir('libs')
+    doLast {
+        fetchPackJar('create', createJar)
+        copy {
+            from zipTree(createJar).matching { include 'META-INF/jarjar/*.jar' }
+            into 'libs/jij'
+            eachFile { path = name }
+            includeEmptyDirs = false
+        }
+        copy { from createJar; into 'run/mods' }
+        // Sable and Loconautics: compiled against for the track-laying car on physics trains, never required
+        fetchPackJar('sable', file('libs/sable.jar'))
+        fetchPackJar('createloconautics', file('libs/loconautics.jar'))
+        copy {
+            from zipTree(file('libs/sable.jar')).matching { include 'META-INF/jarjar/sable-companion*.jar' }
+            into 'libs/jij'
+            eachFile { path = name }
+            includeEmptyDirs = false
+        }
+    }
+}
+// The Loconautics stack, only for runHarnessLoco: a server that boots with Loconautics, Sable and the
+// Aeronautics bundle, to check the physics-train track layer switches on and ticks cleanly.
+def fetchLocoStack = tasks.register('fetchLocoStack') {
+    dependsOn fetchCreate
+    doLast {
+        fetchPackJar('create-aeronautics', file('libs/aeronautics.jar'))
+        copy { from createJar, file('libs/sable.jar'), file('libs/loconautics.jar'), file('libs/aeronautics.jar'); into 'run-loco/mods' }
+        copy { from '../../minecraft/config/create-server.toml', '../../minecraft/config/loconautics-server.toml'; into 'run-loco/config' }
+        file('run-loco/eula.txt').text = 'eula=true\n'
+        file('run-loco/server.properties').text = 'online-mode=false\nlevel-seed=gonka-rails\nmax-tick-time=-1\nview-distance=4\nsimulation-distance=4\n'
+    }
+}
+
+// Xaero's World Map, only so the camera run can show the map overlay. The mod never compiles against it.
+def fetchXaero = tasks.register('fetchXaero') {
+    doLast {
+        def jar = file('libs/xaeroworldmap.jar')
+        fetchPackJar('xaeros-world-map', jar)
+        copy { from jar; into 'run/mods' }
+    }
+}
+tasks.named('compileJava') { dependsOn fetchCreate }
+
+// Test servers use the pack's Create server config (maxTrackPlacementLength and friends), not Create's defaults.
+def packCreateConfig = tasks.register('packCreateConfig', Copy) {
+    from '../../minecraft/config/create-server.toml'
+    into 'run/config'
+}
+tasks.matching { it.name in ['runServer', 'runHarness', 'runCamera'] }.configureEach { dependsOn packCreateConfig }
+tasks.matching { it.name == 'runCamera' }.configureEach { dependsOn fetchXaero }
+tasks.matching { it.name == 'runHarnessLoco' }.configureEach { dependsOn fetchLocoStack }
+tasks.named('compileHarnessJava') { dependsOn fetchCreate }
+
+dependencies {
+    compileOnly files('libs/create.jar')
+    compileOnly fileTree('libs/jij') { include '*.jar' }
+    compileOnly files('libs/sable.jar', 'libs/loconautics.jar')
+}
+
+neoForge {
+    version = project.neo_version
+    addModdingDependenciesTo(sourceSets.harness)
+
+    runs {
+        server {
+            server()
+            programArgument '--nogui'
+        }
+        harness {
+            server()
+            programArgument '--nogui'
+            sourceSet = sourceSets.harness
+            systemProperty 'track_planner.harness', 'true'
+            // -Pcases=c1_autotrack_case1,c2_600 runs only those cases
+            systemProperty 'track_planner.cases', project.findProperty('cases') ?: ''
+            // -PinspectOnly=true checks the track already in run/world and changes nothing
+            systemProperty 'track_planner.inspectOnly', project.findProperty('inspectOnly') ?: 'false'
+        }
+        // Screenshots of a built world: copy run/world to run/saves/tracks first, write run/viewpoints.txt.
+        // Headless: xvfb-run with Mesa's software OpenGL (see harness/Camera.java).
+        camera {
+            client()
+            sourceSet = sourceSets.harness
+            systemProperty 'track_planner.camera', 'true'
+            // -PcameraBlueprint="sdx sdz gdx gdz": plan a blueprint (offsets from spawn) and shoot its ghost instead of viewpoints.txt
+            systemProperty 'track_planner.cameraBlueprint', project.findProperty('cameraBlueprint') ?: ''
+            // -PcameraMap=true: after the ghost shots, open Xaero's World Map and shoot the overlay
+            systemProperty 'track_planner.cameraMap', project.findProperty('cameraMap') ?: 'false'
+            // -PcameraMapPlan=true: then plan a line by clicking on the map, as a player would
+            systemProperty 'track_planner.cameraMapPlan', project.findProperty('cameraMapPlan') ?: 'false'
+            programArguments.addAll '--quickPlaySingleplayer', 'tracks', '--width', '1600', '--height', '900'
+        }
+        harnessLoco {
+            server()
+            programArgument '--nogui'
+            sourceSet = sourceSets.harness
+            gameDirectory = project.file('run-loco')
+            systemProperty 'track_planner.harness', 'true'
+            systemProperty 'track_planner.cases', 'none'
+            systemProperty 'track_planner.locoBoot', 'true'
+        }
+        configureEach {
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+            sourceSet(sourceSets.harness)
+        }
+    }
+}
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

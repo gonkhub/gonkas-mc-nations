@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " R ",
+    "ACA",
+    " D "
+  ],
+  "key": {
+    "R": { "item": "track_planner:rail_planner" },
+    "A": { "item": "create:andesite_alloy" },
+    "C": { "item": "create:andesite_casing" },
+    "D": { "item": "create:mechanical_drill" }
+  },
+  "result": { "id": "track_planner:track_layer", "count": 1 }
+}

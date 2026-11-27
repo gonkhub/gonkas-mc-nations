@@ -17,7 +17,21 @@ record lives in `docs/`, which deliberately stays out of this repo.
 
 ## Unreleased
 
-- _nothing yet_
+- **New: Track Planner, Factorio-style rail planning for Create trains.** Craft a Rail Planner
+  (andesite alloy, a map and a compass), right-click where a line starts and right-click the
+  destination: it finds a route up to 4,000 blocks long that Create's track rules allow, avoiding
+  water, steep climbs and deep valleys. You can also plan by clicking two points on the world map
+  (the rail button, top left).
+- Planned lines show as ghost track in the world, through walls, and on the world map, with
+  their length and how much track they need. Ghost track disappears as pieces are built.
+- **Build a line by hand:** press B (or sneak-right-click the air) to switch building on, then
+  walk along your line holding the planner. Pieces within 8 blocks get built from your
+  inventory: track, plus a pickaxe, shovel or axe for anything in the way (tools wear, you keep
+  the drops). Land claims are respected.
+- **Or let a train build it:** put a Track Layer on a train car with chests of track. As the
+  train drives along your line it lays the next piece within 12 blocks; put drills on the front
+  to clear the way. If it runs out of track it says so and brakes, so mind your speed.
+- Only a line's owner (or an op) can build or remove it.
 
 
 ## 0.14.0 - 2026-11-27

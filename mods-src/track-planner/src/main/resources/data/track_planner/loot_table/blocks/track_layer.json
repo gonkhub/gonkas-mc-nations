@@ -1,0 +1,5 @@
+{
+  "type": "minecraft:block",
+  "pools": [ { "rolls": 1, "entries": [ { "type": "minecraft:item", "name": "track_planner:track_layer" } ],
+               "conditions": [ { "condition": "minecraft:survives_explosion" } ] } ]
+}
