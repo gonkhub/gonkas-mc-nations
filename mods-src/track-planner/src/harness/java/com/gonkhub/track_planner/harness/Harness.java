@@ -138,6 +138,8 @@ public final class Harness {
         for (long ch : r.chunks) level.setChunkForced(ChunkPos.getX(ch), ChunkPos.getZ(ch), true);
         Vec3 a = Vec3.atBottomCenterOf(an.get(0).pos()), b = Vec3.atBottomCenterOf(end.pos());
         later.add(() -> graphCheck(c.name(), a, b, len));
+        // and look again once Create has had its scheduled ticks on the new track
+        later.add(() -> { log.println("--- after 20 s of game time: " + c.name()); inspect(level, plan, real); });
     }
 
     /**
@@ -170,8 +172,9 @@ public final class Harness {
         double maxLift = 0, liftSum = 0; int liftN = 0;
         for (Anchor a : an) {
             if (!(level.getBlockEntity(a.pos()) instanceof com.simibubi.create.content.trains.track.TrackBlockEntity tbe)) continue;
-            for (com.simibubi.create.content.trains.track.BezierConnection bc : tbe.getConnections().values()) {
-                if (!bc.isPrimary()) continue;
+            for (com.simibubi.create.content.trains.track.BezierConnection placed : tbe.getConnections().values()) {
+                if (!placed.isPrimary()) continue;
+                var bc = Builder.settled(placed);
                 int n = Math.max(8, (int) Math.ceil(bc.getLength() * 4));
                 for (int k = 0; k <= n; k++) {
                     Vec3 at = bc.getPosition(k / (double) n);
@@ -229,7 +232,11 @@ public final class Harness {
                                 || st.getBlock() instanceof com.simibubi.create.content.trains.track.FakeTrackBlock;
                         if (!trackish && st.blocksMotion()) { buried++; what.merge("rail inside " + st.getBlock().getName().getString(), 1, Integer::sum); }
                         else if (above.blocksMotion() && !(above.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock)) { buried++; what.merge("covered by " + above.getBlock().getName().getString(), 1, Integer::sum); }
-                        if (!st.getFluidState().isEmpty()) wet++;
+                        if (!st.getFluidState().isEmpty()) {
+                            wet++;
+                            if (wet <= 8) log.printf("   wet rail at %s: %s, source=%s, track block here=%s%n", p.set(Math.floor(at.x), Math.floor(at.y + 0.05), Math.floor(at.z)).toShortString(),
+                                    st.getBlock().getName().getString(), st.getFluidState().isSource(), st.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock || st.getBlock() instanceof com.simibubi.create.content.trains.track.FakeTrackBlock);
+                        }
                     }
                 }
             }

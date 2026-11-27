@@ -323,7 +323,8 @@ public final class Planner {
             double above = ty - 1 - g;
             if (water != Integer.MIN_VALUE) {
                 // over water the track must clear the surface; it then floats, nothing is built under it
-                if (ty < water + 1) return Double.POSITIVE_INFINITY;
+                // a sloped piece gets one more block: where two slopes meet Create tilts the joint and the rails dip
+                if (ty < water + (dy != 0 ? 2 : 1)) return Double.POSITIVE_INFINITY;
                 c += step * (w.overWater + (ty - water - 1) * w.lift);
             } else if (above > 0) {
                 c += step * (above * w.lift + Math.max(0, above - w.comfortLift) * w.liftSteep);

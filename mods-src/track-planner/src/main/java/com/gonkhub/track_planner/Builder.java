@@ -130,7 +130,8 @@ public final class Builder {
     }
 
     /** Every block a train would pass through along a curve, one block either side of the rails. */
-    static void clearAlong(ServerLevel level, Result r, BezierConnection bc, int clearance) {
+    static void clearAlong(ServerLevel level, Result r, BezierConnection placed, int clearance) {
+        BezierConnection bc = settled(placed);
         int n = Math.max(8, (int) Math.ceil(bc.getLength() * 4));
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
         for (int i = 0; i <= n; i++) {
@@ -141,6 +142,15 @@ public final class Builder {
                 for (int dy = 0; dy < clearance; dy++)
                     clear(level, r, p.set(Mth.floor(at.x + side.x * off), Mth.floor(at.y + 0.05 + dy), Mth.floor(at.z + side.z * off)));
         }
+    }
+
+    /**
+     * The curve as the game will draw it. Where two slopes meet, Create tilts the joint and edits both curves
+     * in place, but a curve's shape is computed once and cached, so the placed object can still report the
+     * shape from before the tilt. A copy made through Create's own save format (what a restart loads) is exact.
+     */
+    public static BezierConnection settled(BezierConnection placed) {
+        return new BezierConnection(placed.write(BlockPos.ZERO), BlockPos.ZERO);
     }
 
     static void clear(ServerLevel level, Result r, BlockPos pos) {
