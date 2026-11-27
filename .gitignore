@@ -120,6 +120,8 @@
 !/minecraft/mods/maptable-*.jar
 # built from mods-src/desire-paths/; the jar is what the version ledger pins
 !/minecraft/mods/desire_paths-*.jar
+# built from mods-src/track-planner/; prototype on its branch for dev testing (#38)
+!/minecraft/mods/track_planner-*.jar
 
 # third-party, hand-installed (no packwiz index entry)
 !/minecraft/mods/kubejs-neoforge-*.jar

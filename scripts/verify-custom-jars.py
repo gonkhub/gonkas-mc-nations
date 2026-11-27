@@ -58,7 +58,7 @@ LEDGER = MODS / "version-ledger.tsv"
 # morejs) are deliberately NOT here: they are published artifacts with real version
 # discipline upstream, and hand-installed.sha1 already pins them. The ledger is for
 # the jars whose version string is set by whoever ran gradle.
-CUSTOM_PREFIXES = ("thee-", "chaosgate-", "omnifix-", "atlas-", "maptable-", "desire_paths-")
+CUSTOM_PREFIXES = ("thee-", "chaosgate-", "omnifix-", "atlas-", "maptable-", "desire_paths-", "track_planner-")
 
 LEDGER_HEADER = (
     "# Every version of a pack-built mod ever released, and the sha1 it had.\n"
