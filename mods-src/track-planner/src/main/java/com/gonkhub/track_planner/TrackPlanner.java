@@ -37,17 +37,38 @@ public final class TrackPlanner {
     public static final String MOD_ID = "track_planner";
 
     static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
+    static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
+    static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MOD_ID);
     static final DeferredRegister.DataComponents COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, MOD_ID);
 
     public static final DeferredItem<RailPlannerItem> RAIL_PLANNER =
             ITEMS.register("rail_planner", () -> new RailPlannerItem(new Item.Properties().stacksTo(1)));
+    public static final net.neoforged.neoforge.registries.DeferredBlock<com.gonkhub.track_planner.layer.TrackLayerBlock> TRACK_LAYER =
+            BLOCKS.register("track_layer", () -> new com.gonkhub.track_planner.layer.TrackLayerBlock(
+                    net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().strength(2.5f)
+                            .sound(net.minecraft.world.level.block.SoundType.METAL).requiresCorrectToolForDrops()));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> TRACK_LAYER_ITEM = ITEMS.registerSimpleBlockItem(TRACK_LAYER);
+    public static final DeferredHolder<net.minecraft.world.level.block.entity.BlockEntityType<?>,
+            net.minecraft.world.level.block.entity.BlockEntityType<com.gonkhub.track_planner.layer.TrackLayerBlockEntity>> TRACK_LAYER_BE =
+            BLOCK_ENTITIES.register("track_layer", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder
+                    .of((pos, state) -> new com.gonkhub.track_planner.layer.TrackLayerBlockEntity(TrackPlanner.TRACK_LAYER_BE.get(), pos, state),
+                            TRACK_LAYER.get()).build(null));
     /** Where the line being planned starts; on the Rail Planner between the two clicks. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>> PLAN_START =
             COMPONENTS.registerComponentType("plan_start", b -> b.persistent(BlockPos.CODEC).networkSynchronized(BlockPos.STREAM_CODEC));
 
     public TrackPlanner(IEventBus modBus) {
         ITEMS.register(modBus);
+        BLOCKS.register(modBus);
+        BLOCK_ENTITIES.register(modBus);
         COMPONENTS.register(modBus);
+        modBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() ->
+                com.simibubi.create.api.behaviour.movement.MovementBehaviour.REGISTRY.register(TRACK_LAYER.get(),
+                        new com.gonkhub.track_planner.layer.TrackLayerMovement())));
+        // the physics-train side only exists with Loconautics; its classes are never touched otherwise
+        if (net.neoforged.fml.ModList.get().isLoaded("loconautics"))
+            NeoForge.EVENT_BUS.addListener(com.gonkhub.track_planner.layer.LocoTrackLayers::tick);
         modBus.addListener(TrackPlanner::payloads);
         modBus.addListener(TrackPlanner::creativeTab);
         NeoForge.EVENT_BUS.addListener(TrackPlanner::commands);
@@ -61,7 +82,10 @@ public final class TrackPlanner {
     }
 
     static void creativeTab(BuildCreativeModeTabContentsEvent e) {
-        if (e.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) e.accept(RAIL_PLANNER.get());
+        if (e.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            e.accept(RAIL_PLANNER.get());
+            e.accept(TRACK_LAYER_ITEM.get());
+        }
     }
 
     static void login(PlayerEvent.PlayerLoggedInEvent e) {

@@ -6,3 +6,4 @@ out/
 libs/
 .idea/
 *.iml
+run-loco/

@@ -34,20 +34,28 @@ configurations {
 // Flywheel, Ponder and Registrate). None of Create's maven builds is byte-identical
 // to the released jar, which is why this does not use a maven dependency.
 // ---------------------------------------------------------------------------
+// A jar from the packwiz index: its URL (or, for CurseForge-only entries, the CDN path of its file id)
+// and its hash, so what we compile and test against is byte-for-byte what the pack ships.
 def packIndex = { String name ->
     def text = file("../../minecraft/mods/.index/${name}.pw.toml").text
-    [url: (text =~ /(?m)^url = '([^']+)'/)[0][1], sha512: (text =~ /(?m)^hash = '([^']+)'/)[0][1]]
+    def get = { String key -> def m = (text =~ /(?m)^${key} = '?([^'\n]*)'?/); m.find() ? m.group(1) : '' }
+    def url = get('url')
+    if (!url) {
+        long id = get('file-id') as long
+        url = "https://edge.forgecdn.net/files/${id.intdiv(1000)}/${id % 1000}/${get('filename')}"
+    }
+    [url: url, hash: get('hash'), algo: get('hash-format') == 'sha1' ? 'SHA-1' : 'SHA-512']
 }
-def sha512Of = { File f -> MessageDigest.getInstance('SHA-512').digest(f.bytes).encodeHex().toString() }
+def hashOf = { File f, String algo -> MessageDigest.getInstance(algo).digest(f.bytes).encodeHex().toString() }
 def fetchPackJar = { String name, File dest ->
     def entry = packIndex(name)
-    if (!dest.exists() || sha512Of(dest) != entry.sha512) {
+    if (!dest.exists() || hashOf(dest, entry.algo) != entry.hash) {
         dest.parentFile.mkdirs()
         ant.get(src: entry.url, dest: dest)
-        def got = sha512Of(dest)
-        if (got != entry.sha512) {
+        def got = hashOf(dest, entry.algo)
+        if (got != entry.hash) {
             dest.delete()
-            throw new GradleException("${name} jar sha512 mismatch: ${got}")
+            throw new GradleException("${name} jar hash mismatch: ${got}")
         }
     }
 }
@@ -64,8 +72,30 @@ def fetchCreate = tasks.register('fetchCreate') {
             includeEmptyDirs = false
         }
         copy { from createJar; into 'run/mods' }
+        // Sable and Loconautics: compiled against for the track-laying car on physics trains, never required
+        fetchPackJar('sable', file('libs/sable.jar'))
+        fetchPackJar('createloconautics', file('libs/loconautics.jar'))
+        copy {
+            from zipTree(file('libs/sable.jar')).matching { include 'META-INF/jarjar/sable-companion*.jar' }
+            into 'libs/jij'
+            eachFile { path = name }
+            includeEmptyDirs = false
+        }
     }
 }
+// The Loconautics stack, only for runHarnessLoco: a server that boots with Loconautics, Sable and the
+// Aeronautics bundle, to check the physics-train track layer switches on and ticks cleanly.
+def fetchLocoStack = tasks.register('fetchLocoStack') {
+    dependsOn fetchCreate
+    doLast {
+        fetchPackJar('create-aeronautics', file('libs/aeronautics.jar'))
+        copy { from createJar, file('libs/sable.jar'), file('libs/loconautics.jar'), file('libs/aeronautics.jar'); into 'run-loco/mods' }
+        copy { from '../../minecraft/config/create-server.toml', '../../minecraft/config/loconautics-server.toml'; into 'run-loco/config' }
+        file('run-loco/eula.txt').text = 'eula=true\n'
+        file('run-loco/server.properties').text = 'online-mode=false\nlevel-seed=gonka-rails\nmax-tick-time=-1\nview-distance=4\nsimulation-distance=4\n'
+    }
+}
+
 // Xaero's World Map, only so the camera run can show the map overlay. The mod never compiles against it.
 def fetchXaero = tasks.register('fetchXaero') {
     doLast {
@@ -83,11 +113,13 @@ def packCreateConfig = tasks.register('packCreateConfig', Copy) {
 }
 tasks.matching { it.name in ['runServer', 'runHarness', 'runCamera'] }.configureEach { dependsOn packCreateConfig }
 tasks.matching { it.name == 'runCamera' }.configureEach { dependsOn fetchXaero }
+tasks.matching { it.name == 'runHarnessLoco' }.configureEach { dependsOn fetchLocoStack }
 tasks.named('compileHarnessJava') { dependsOn fetchCreate }
 
 dependencies {
     compileOnly files('libs/create.jar')
     compileOnly fileTree('libs/jij') { include '*.jar' }
+    compileOnly files('libs/sable.jar', 'libs/loconautics.jar')
 }
 
 neoForge {
@@ -122,6 +154,15 @@ neoForge {
             // -PcameraMapPlan=true: then plan a line by clicking on the map, as a player would
             systemProperty 'track_planner.cameraMapPlan', project.findProperty('cameraMapPlan') ?: 'false'
             programArguments.addAll '--quickPlaySingleplayer', 'tracks', '--width', '1600', '--height', '900'
+        }
+        harnessLoco {
+            server()
+            programArgument '--nogui'
+            sourceSet = sourceSets.harness
+            gameDirectory = project.file('run-loco')
+            systemProperty 'track_planner.harness', 'true'
+            systemProperty 'track_planner.cases', 'none'
+            systemProperty 'track_planner.locoBoot', 'true'
         }
         configureEach {
             logLevel = org.slf4j.event.Level.INFO

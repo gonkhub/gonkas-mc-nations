@@ -55,7 +55,8 @@ public final class Harness {
             new Case("c4_3km", 300, 300, 2800, 1900, false),
             new Case("b1_blueprint", -20, -20, -260, 140, true),
             new Case("a4_async_3km", 300, 300, 2800, 1900, false),
-            new Case("s1_survival", -60, 220, -330, 420, false));
+            new Case("s1_survival", -60, 220, -330, 420, false),
+            new Case("l1_layer", 200, -150, 520, -420, false));
 
     @SubscribeEvent
     static void started(ServerStartedEvent e) throws Exception {
@@ -69,10 +70,22 @@ public final class Harness {
         log.println("Rail Planner recipe loaded: " + recipe.isPresent() + recipe.map(r -> " (" + r.value().getType() + ", makes "
                 + r.value().getResultItem(level.registryAccess()).getHoverName().getString() + ")").orElse(""));
         if (Boolean.getBoolean("track_planner.inspectOnly")) { inspectWorld(level); return; }
+        if (Boolean.getBoolean("track_planner.locoBoot")) {
+            var mods = net.neoforged.fml.ModList.get();
+            log.println("loaded: loconautics " + mods.isLoaded("loconautics") + ", sable " + mods.isLoaded("sable") + ", simulated "
+                    + mods.isLoaded("simulated") + ", create " + mods.isLoaded("create") + ", track_planner " + mods.isLoaded("track_planner"));
+            log.println("sub-level container on the overworld: " + (dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(level) != null));
+            locoBoot = true;
+        }
         String only = System.getProperty("track_planner.cases", "");
         for (Case c : CASES) {
             if (!only.isEmpty() && !Arrays.asList(only.split(",")).contains(c.name())) continue;
             if (c.async()) { startAsync(level, spawn, c); continue; }
+            if (c.name().startsWith("l")) {
+                try { LayerTest.run(level, spawn, c.name(), c.sx(), c.sz(), c.gx(), c.gz(), log); }
+                catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
+                continue;
+            }
             if (c.survival()) {
                 try { SurvivalTest.run(level, spawn, c.name(), c.sx(), c.sz(), c.gx(), c.gz(), log); }
                 catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
@@ -346,6 +359,7 @@ public final class Harness {
 
     // ---- background planning while the server ticks ----
     static volatile boolean asyncPending;
+    static boolean locoBoot;
     static long tickStart, asyncStart, slowTicks, tickCount, tickNanos, maxTick, lastPre, maxGap, longGaps;
 
     static void startAsync(ServerLevel level, BlockPos spawn, Case c) {

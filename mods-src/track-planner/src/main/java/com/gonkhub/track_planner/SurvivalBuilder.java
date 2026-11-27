@@ -59,7 +59,11 @@ public final class SurvivalBuilder {
     public static final int EVERY = 10;
 
     /** What happened on one attempt, for the player and for tests. */
-    public record Outcome(boolean built, String message) {}
+    /**
+     * What happened on one attempt, for the player and for tests. distance: how far the piece it tried
+     * (or built) is from the builder; Double.MAX_VALUE when there was nothing within reach.
+     */
+    public record Outcome(boolean built, String message, double distance) {}
 
     static final Map<UUID, String> lastMessage = new HashMap<>();
 
@@ -85,34 +89,44 @@ public final class SurvivalBuilder {
         return p.getMainHandItem().is(TrackPlanner.RAIL_PLANNER.get()) || p.getOffhandItem().is(TrackPlanner.RAIL_PLANNER.get());
     }
 
-    /** Builds the nearest unbuilt piece within reach of this player, if they may and can. */
+    /** The nearest unbuilt piece within reach of a player, built from their inventory. */
     public static Outcome buildNear(ServerPlayer p) {
-        ServerLevel level = p.serverLevel();
+        return buildNear(p.serverLevel(), p.position(), new Supplies.PlayerInventory(p), REACH);
+    }
+
+    /**
+     * Builds the nearest unbuilt piece within reach of a point, of a blueprint the supplies' actor may build,
+     * paid for from the supplies. Players and track-laying trains both come through here.
+     */
+    public static Outcome buildNear(ServerLevel level, Vec3 at, Supplies sup, double reach) {
+        ServerPlayer p = sup.actor();
         Blueprints all = Blueprints.get(level.getServer());
         Blueprint best = null;
         int bestMove = -1;
-        double bestDist = REACH;
+        double bestDist = reach;
         for (Blueprint b : all.all()) {
             if (!b.mayManage(p)) continue;
             for (int i = 0; i < b.moves().size(); i++) {
                 if (b.isBuilt(i)) continue;
-                double d = distance(p.position(), b, i);
+                double d = distance(at, b, i);
                 if (d <= bestDist) { bestDist = d; best = b; bestMove = i; }
             }
         }
-        if (best == null) return new Outcome(false, null);
-        String why = tryBuild(level, best, bestMove, p);
-        if (why != null) return new Outcome(false, "Blueprint #" + best.id() + ": " + why);
+        if (best == null) return new Outcome(false, null, Double.MAX_VALUE);
+        String why = tryBuild(level, best, bestMove, sup);
+        if (why != null) return new Outcome(false, "Blueprint #" + best.id() + ": " + why, bestDist);
         all.markBuilt(best, bestMove);
         Anchor end = best.anchors().get(bestMove + 1);
         level.playSound(null, end.pos(), SoundEvents.METAL_PLACE, SoundSource.BLOCKS, 0.8f, 1.1f);
         int done = best.built().cardinality(), total = best.moves().size();
         if (best.complete()) {
             all.remove(level.getServer(), best.id());
-            p.sendSystemMessage(Component.literal("Blueprint #" + best.id() + " is built: " + Math.round(best.length()) + " blocks of track.")
-                    .withStyle(ChatFormatting.AQUA));
+            Component msg = Component.literal("Blueprint #" + best.id() + " is built: " + Math.round(best.length()) + " blocks of track.")
+                    .withStyle(ChatFormatting.AQUA);
+            if (p.connection != null && !(p instanceof net.neoforged.neoforge.common.util.FakePlayer)) p.sendSystemMessage(msg);
+            else for (ServerPlayer near : level.players()) if (near.position().distanceTo(at) < 48) near.sendSystemMessage(msg);
         }
-        return new Outcome(true, String.format("Blueprint #%d: built piece %d of %d", best.id(), done, total));
+        return new Outcome(true, String.format("Blueprint #%d: built piece %d of %d", best.id(), done, total), bestDist);
     }
 
     /** Closest distance from a point to the samples of one move, at track height. */
@@ -131,13 +145,14 @@ public final class SurvivalBuilder {
      * Builds move i of the blueprint for this player, paying for it. Null when built, else why not
      * (and then nothing in the world has changed).
      */
-    public static String tryBuild(ServerLevel level, Blueprint b, int i, ServerPlayer p) {
+    public static String tryBuild(ServerLevel level, Blueprint b, int i, Supplies sup) {
+        ServerPlayer p = sup.actor();
         Anchor a = b.anchors().get(i), c = b.anchors().get(i + 1);
         Move m = b.moves().get(i);
         Planner.Weights w = new Planner.Weights();
-        boolean creative = p.isCreative();
+        boolean creative = sup.free();
 
-        Item track = pickTrack(p);
+        Item track = sup.track();
         if (track == null && creative) track = AllBlocks.TRACK.asItem();
         if (track == null) return "carry some Create track";
 
@@ -193,18 +208,18 @@ public final class SurvivalBuilder {
         int needTrack = Blueprint.isLevelStraight(m, a, c) ? Math.max(Math.abs(c.x() - a.x()), Math.abs(c.z() - a.z())) + 1
                 : Blueprint.curve(a, c).getTrackItemCost() + 2;
         if (!creative) {
-            int have = count(p, track);
+            int have = sup.count(track);
             if (have < needTrack) return String.format("need %d %s, carrying %d", needTrack, name(track), have);
         }
-        Map<BlockPos, ItemStack> toolFor = new HashMap<>();
+        Map<BlockPos, Supplies.Tool> toolFor = new HashMap<>();
         if (!creative) {
-            Map<ItemStack, Integer> uses = new IdentityHashMap<>();
+            Map<Object, Integer> uses = new HashMap<>();
             for (BlockPos pos : toDig) {
                 BlockState st = level.getBlockState(pos);
                 if (free(level, pos, st)) continue;
-                ItemStack tool = bestTool(p, st, uses);
+                Supplies.Tool tool = sup.tool(st, uses);
                 if (tool == null) return "need " + toolKind(st) + " for " + name(st);
-                uses.merge(tool, 1, Integer::sum);
+                uses.merge(tool.key(), 1, Integer::sum);
                 toolFor.put(pos, tool);
             }
         }
@@ -214,18 +229,21 @@ public final class SurvivalBuilder {
         for (BlockPos pos : toDig) {
             BlockState st = level.getBlockState(pos);
             if (st.isAir() || st.getBlock() instanceof ITrackBlock || st.getBlock() instanceof FakeTrackBlock) continue;
-            ItemStack tool = toolFor.getOrDefault(pos, ItemStack.EMPTY);
+            Supplies.Tool tool = toolFor.get(pos);
+            ItemStack toolStack = tool == null ? ItemStack.EMPTY : tool.stack();
             if (!creative && st.getFluidState().isEmpty())
-                for (ItemStack drop : Block.getDrops(st, level, pos, level.getBlockEntity(pos), p, tool)) give(p, drop);
-            if (!tool.isEmpty()) tool.hurtAndBreak(1, level, p, item -> {});
+                for (ItemStack drop : Block.getDrops(st, level, pos, level.getBlockEntity(pos), p, toolStack)) sup.give(drop);
+            if (tool != null) tool.wear().run();
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
             seal(level, pos, st, dig);
         }
         BlockState base = track instanceof BlockItem bi ? bi.getBlock().defaultBlockState() : AllBlocks.TRACK.getDefaultState();
         for (Anchor an : new Anchor[]{a, c})
-            if (Builder.setTrack(level, an, base) && !creative) take(p, track, 1);
+            if (Builder.setTrack(level, an, base) && !creative) sup.take(track, 1);
         String refusal = Builder.connect(level, p, a, c, r, track);
         if (refusal != null) return "Create refused the piece (" + refusal + ")";
+        // a train's storage pays Create's own count of what it laid (a player pays through Create directly)
+        if (!creative && !sup.createTakesTrack()) sup.take(track, r.trackItems);
         // the curve as Create laid it may pass a little off the prediction, and where it meets a slope built
         // earlier Create tilts the joint and reshapes that earlier curve too: clear along every curve touching
         // either end, whichever end Create stores it on
@@ -245,24 +263,6 @@ public final class SurvivalBuilder {
         return st.canBeReplaced() || st.is(BlockTags.LEAVES) || !st.getFluidState().isEmpty() || st.getDestroySpeed(level, pos) == 0;
     }
 
-    /** The fastest tool in the inventory that mines this block properly and has durability left. */
-    static ItemStack bestTool(ServerPlayer p, BlockState st, Map<ItemStack, Integer> uses) {
-        ItemStack best = null;
-        float bestSpeed = 1.0f;
-        List<ItemStack> stacks = new ArrayList<>(p.getInventory().items);
-        stacks.addAll(p.getInventory().offhand);
-        for (ItemStack stack : stacks) {
-            if (stack.isEmpty() || !stack.isDamageableItem()) continue;
-            float speed = stack.getDestroySpeed(st);
-            if (speed <= bestSpeed) continue;
-            if (st.requiresCorrectToolForDrops() && !stack.isCorrectToolForDrops(st)) continue;
-            int left = stack.getMaxDamage() - stack.getDamageValue() - uses.getOrDefault(stack, 0);
-            if (left <= 1) continue;   // never break the tool outright
-            best = stack;
-            bestSpeed = speed;
-        }
-        return best;
-    }
 
     static String toolKind(BlockState st) {
         if (st.is(BlockTags.MINEABLE_WITH_PICKAXE)) return "a pickaxe";
@@ -284,38 +284,9 @@ public final class SurvivalBuilder {
         }
     }
 
-    /** The Create track kind the player carries most of. */
-    static Item pickTrack(ServerPlayer p) {
-        Map<Item, Integer> counts = new HashMap<>();
-        for (ItemStack st : p.getInventory().items)
-            if (!st.isEmpty() && AllTags.AllBlockTags.TRACKS.matches(st)) counts.merge(st.getItem(), st.getCount(), Integer::sum);
-        for (ItemStack st : p.getInventory().offhand)
-            if (!st.isEmpty() && AllTags.AllBlockTags.TRACKS.matches(st)) counts.merge(st.getItem(), st.getCount(), Integer::sum);
-        return counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
-    }
 
-    static int count(ServerPlayer p, Item item) {
-        int n = 0;
-        for (ItemStack st : p.getInventory().items) if (st.is(item)) n += st.getCount();
-        for (ItemStack st : p.getInventory().offhand) if (st.is(item)) n += st.getCount();
-        return n;
-    }
 
-    static void take(ServerPlayer p, Item item, int n) {
-        for (List<ItemStack> list : List.of(p.getInventory().items, p.getInventory().offhand))
-            for (ItemStack st : list) {
-                if (n <= 0) return;
-                if (!st.is(item)) continue;
-                int k = Math.min(n, st.getCount());
-                st.shrink(k);
-                n -= k;
-            }
-    }
 
-    static void give(ServerPlayer p, ItemStack drop) {
-        ItemStack copy = drop.copy();
-        if (!p.getInventory().add(copy) && !copy.isEmpty()) p.drop(copy, false);
-    }
 
     static String name(BlockState st) { return st.getBlock().getName().getString(); }
 
