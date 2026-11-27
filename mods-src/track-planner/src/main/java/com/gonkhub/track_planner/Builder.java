@@ -6,13 +6,17 @@ import com.gonkhub.track_planner.Planner.Plan;
 import com.mojang.authlib.GameProfile;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllDataComponents;
+import com.simibubi.create.content.trains.track.BezierConnection;
+import com.simibubi.create.content.trains.track.FakeTrackBlock;
 import com.simibubi.create.content.trains.track.ITrackBlock;
+import com.simibubi.create.content.trains.track.TrackBlockEntity;
 import com.simibubi.create.content.trains.track.TrackBlock;
 import com.simibubi.create.content.trains.track.TrackPlacement;
 import com.simibubi.create.content.trains.track.TrackShape;
 import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
@@ -31,8 +35,9 @@ import java.util.UUID;
 /**
  * Builds a plan in the world, creative-style (nothing is charged yet; the report counts what it would cost).
  *
- * Earthworks come first: a 3-wide, clearance-tall cut along the line, an embankment where the bed is low,
- * and a deck on pillars over water or deep gaps. Then every move is placed through Create's own
+ * Nothing is ever built under the track: it lies on the ground, or runs just above it, and players can
+ * add embankments or bridges later. The only earthworks are clearing: a 3-wide, clearance-tall gauge along
+ * the line before the track goes in, and again along each curve as Create actually laid it. Every move is placed through Create's own
  * TrackPlacement.tryConnect, the code that runs when a player joins two tracks, so each piece passes
  * Create's checks and is laid exactly as a player would lay it.
  */
@@ -45,10 +50,6 @@ public final class Builder {
         public long earthworksMs, trackMs;
         public final List<Long> chunks = new ArrayList<>();
     }
-
-    static final BlockState DECK = Blocks.STONE_BRICKS.defaultBlockState();
-    static final BlockState FILL = Blocks.COBBLESTONE.defaultBlockState();
-    static final int PILLAR_EVERY = 8;
 
     public static Result build(ServerLevel level, Plan plan, Planner.Weights w) {
         Result r = new Result();
@@ -80,35 +81,13 @@ public final class Builder {
             if (!r.chunks.contains(c)) r.chunks.add(c);
         });
 
-        // ---- earthworks ----
+        // ---- clear the loading gauge along the planned line (nothing is ever placed under the track) ----
         long t0 = System.nanoTime();
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
-        int[] along = {0};
         for (Long2IntLinkedOpenHashMap cols : List.of(core, halo)) {
-            boolean isCore = cols == core;
             cols.forEach((k, ty) -> {
                 int x = ChunkPos.getX(k), z = ChunkPos.getZ(k);
-                // clear the loading gauge
-                for (int y = ty; y < ty + w.clearance; y++) {
-                    BlockState st = level.getBlockState(p.set(x, y, z));
-                    if (st.isAir() || st.getBlock() instanceof ITrackBlock) continue;
-                    count(r, "removed " + category(st));
-                    level.setBlock(p, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
-                }
-                // support the bed
-                BlockState below = level.getBlockState(p.set(x, ty - 1, z));
-                if (!below.canBeReplaced()) return;
-                int y = ty - 1, depth = 0;
-                while (y - depth > level.getMinBuildHeight() && level.getBlockState(p.set(x, y - depth, z)).canBeReplaced()) depth++;
-                boolean overWater = !level.getBlockState(p.set(x, y, z)).getFluidState().isEmpty()
-                        || !level.getBlockState(p.set(x, y - depth + 1, z)).getFluidState().isEmpty();
-                if (!overWater && depth <= w.maxEmbankment) {
-                    for (int d = 0; d < depth; d++) place(level, r, p.set(x, y - d, z), FILL, "embankment");
-                } else {
-                    place(level, r, p.set(x, y, z), DECK, "bridge deck");
-                    if (isCore && along[0]++ % PILLAR_EVERY == 0)
-                        for (int d = 1; d < depth; d++) place(level, r, p.set(x, y - d, z), DECK, "bridge pillar");
-                }
+                for (int y = ty; y < ty + w.clearance; y++) clear(level, r, p.set(x, y, z));
             });
         }
         r.earthworksMs = (System.nanoTime() - t0) / 1_000_000;
@@ -138,7 +117,38 @@ public final class Builder {
             i = j + 1;
         }
         r.trackMs = (System.nanoTime() - t1) / 1_000_000;
+
+        // ---- clear along the curves Create actually laid: a Bezier rises and falls unlike the straight-line
+        // estimate above, and any block left at rail height hides the rails ----
+        long t2 = System.nanoTime();
+        for (Anchor a : anchors)
+            if (level.getBlockEntity(a.pos()) instanceof TrackBlockEntity tbe)
+                for (BezierConnection bc : tbe.getConnections().values())
+                    if (bc.isPrimary()) clearAlong(level, r, bc, w.clearance);
+        r.earthworksMs += (System.nanoTime() - t2) / 1_000_000;
         return r;
+    }
+
+    /** Every block a train would pass through along a curve, one block either side of the rails. */
+    static void clearAlong(ServerLevel level, Result r, BezierConnection bc, int clearance) {
+        int n = Math.max(8, (int) Math.ceil(bc.getLength() * 4));
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        for (int i = 0; i <= n; i++) {
+            double t = i / (double) n;
+            Vec3 at = bc.getPosition(t), ahead = bc.getPosition(Math.min(1, t + 0.01)).subtract(bc.getPosition(Math.max(0, t - 0.01)));
+            Vec3 side = new Vec3(-ahead.z, 0, ahead.x).normalize();
+            for (int off = -1; off <= 1; off++)
+                for (int dy = 0; dy < clearance; dy++)
+                    clear(level, r, p.set(Mth.floor(at.x + side.x * off), Mth.floor(at.y + 0.05 + dy), Mth.floor(at.z + side.z * off)));
+        }
+    }
+
+    static void clear(ServerLevel level, Result r, BlockPos pos) {
+        BlockState st = level.getBlockState(pos);
+        // water is left alone: the planner keeps the track above it, and draining it would flood the cut
+        if (st.isAir() || st.getBlock() instanceof ITrackBlock || st.getBlock() instanceof FakeTrackBlock || !st.getFluidState().isEmpty()) return;
+        count(r, "removed " + category(st));
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
     }
 
     static boolean isLevelStraight(Move m, Anchor a, Anchor b) { return m.kind() == Moves.Kind.STRAIGHT && a.y() == b.y(); }
@@ -185,11 +195,6 @@ public final class Builder {
         } catch (ReflectiveOperationException e) {
             return "?" + e;
         }
-    }
-
-    static void place(ServerLevel level, Result r, BlockPos pos, BlockState st, String what) {
-        level.setBlock(pos, st, Block.UPDATE_CLIENTS);
-        count(r, "placed " + what);
     }
 
     static void count(Result r, String key) { r.blocks.merge(key, 1, Integer::sum); }

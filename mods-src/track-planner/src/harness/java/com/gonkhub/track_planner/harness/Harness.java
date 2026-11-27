@@ -12,6 +12,7 @@ import com.simibubi.create.content.trains.graph.TrackGraph;
 import com.simibubi.create.content.trains.graph.TrackNode;
 import com.simibubi.create.content.trains.graph.TrackNodeLocation;
 import net.minecraft.core.BlockPos;
+import com.gonkhub.track_planner.Moves;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
@@ -54,7 +55,10 @@ public final class Harness {
         ServerLevel level = e.getServer().overworld();
         BlockPos spawn = level.getSharedSpawnPos();
         log.println("seed " + level.getSeed() + ", spawn " + spawn.toShortString());
+        if (Boolean.getBoolean("track_planner.inspectOnly")) { inspectWorld(level); return; }
+        String only = System.getProperty("track_planner.cases", "");
         for (Case c : CASES) {
+            if (!only.isEmpty() && !Arrays.asList(only.split(",")).contains(c.name())) continue;
             try { run(level, spawn, c); }
             catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
         }
@@ -126,11 +130,130 @@ public final class Harness {
                 r.earthworksMs, r.trackMs, r.placements, r.refused, r.trackItems);
         r.blocks.forEach((k, v) -> log.println("   " + k + ": " + v));
         r.refusals.forEach(s -> log.println("   REFUSED " + s));
+        inspect(level, plan, real);
 
         // keep the line ticking, as it would with players along it, so Create registers the new track
         for (long ch : r.chunks) level.setChunkForced(ChunkPos.getX(ch), ChunkPos.getZ(ch), true);
         Vec3 a = Vec3.atBottomCenterOf(an.get(0).pos()), b = Vec3.atBottomCenterOf(end.pos());
         later.add(() -> graphCheck(c.name(), a, b, len));
+    }
+
+    /**
+     * Walks what was actually built. Straight runs: every block between two anchors must be track with
+     * nothing solid above it. Curves: Create's own curve, sampled every quarter block, must have nothing
+     * solid or wet at rail height. Also reports how high the line floats above the ground.
+     */
+    static void inspect(ServerLevel level, Planner.Plan plan, Terrain real) {
+        List<Anchor> an = plan.anchors();
+        int straightBlocks = 0, gaps = 0, buriedStraight = 0, curveSamples = 0, buriedCurve = 0, wet = 0;
+        List<String> examples = new ArrayList<>();
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        for (int i = 0; i < plan.moves().size(); i++) {
+            Anchor a = an.get(i), b = an.get(i + 1);
+            Move m = plan.moves().get(i);
+            if (m.kind() == com.gonkhub.track_planner.Moves.Kind.STRAIGHT && a.y() == b.y()) {
+                int[] d = com.gonkhub.track_planner.Moves.DIR[a.dir()];
+                int steps = Math.max(Math.abs(b.x() - a.x()), Math.abs(b.z() - a.z()));
+                for (int k = 0; k <= steps; k++) {
+                    p.set(a.x() + d[0] * k, a.y(), a.z() + d[1] * k);
+                    straightBlocks++;
+                    if (!(level.getBlockState(p).getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock)) {
+                        gaps++;
+                        if (examples.size() < 6) examples.add("gap at " + p.toShortString() + ": " + level.getBlockState(p).getBlock());
+                    }
+                    if (level.getBlockState(p.move(0, 1, 0)).blocksMotion()) buriedStraight++;
+                }
+            }
+        }
+        double maxLift = 0, liftSum = 0; int liftN = 0;
+        for (Anchor a : an) {
+            if (!(level.getBlockEntity(a.pos()) instanceof com.simibubi.create.content.trains.track.TrackBlockEntity tbe)) continue;
+            for (com.simibubi.create.content.trains.track.BezierConnection bc : tbe.getConnections().values()) {
+                if (!bc.isPrimary()) continue;
+                int n = Math.max(8, (int) Math.ceil(bc.getLength() * 4));
+                for (int k = 0; k <= n; k++) {
+                    Vec3 at = bc.getPosition(k / (double) n);
+                    curveSamples++;
+                    for (int dy = 0; dy <= 1; dy++) {
+                        var st = level.getBlockState(p.set(Math.floor(at.x), Math.floor(at.y + 0.05 + dy), Math.floor(at.z)));
+                        boolean track = st.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock
+                                || st.getBlock() instanceof com.simibubi.create.content.trains.track.FakeTrackBlock;
+                        if (!track && st.blocksMotion()) {
+                            buriedCurve++;
+                            if (examples.size() < 6) examples.add("rail inside " + st.getBlock() + " at " + p.toShortString());
+                            break;
+                        }
+                        if (!st.getFluidState().isEmpty() && dy == 0) wet++;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < plan.moves().size(); i++) {
+            Anchor a = an.get(i), b = an.get(i + 1);
+            int[][] s = plan.moves().get(i).samples();
+            for (int j = 0; j < s.length; j++) {
+                int x = a.x() + s[j][0], z = a.z() + s[j][1];
+                double ty = a.y() + (b.y() - a.y()) * (j + 1) / (double) s.length;
+                double lift = ty - 1 - real.surface(x, z);
+                if (lift > 0) { maxLift = Math.max(maxLift, lift); liftSum += lift; liftN++; }
+            }
+        }
+        log.printf("inspect: straight runs %d blocks, %d gaps, %d with a solid block on the rails; curves %d samples, %d with rails inside a solid block, %d in water%n",
+                straightBlocks, gaps, buriedStraight, curveSamples, buriedCurve, wet);
+        log.printf("inspect: track floats above ground/water at %d of the sampled points, %.1f blocks on average there, %.0f at most%n", liftN, liftN == 0 ? 0 : liftSum / liftN, maxLift);
+        examples.forEach(e -> log.println("   " + e));
+    }
+
+    /** Inspect-only: every Create track block in the loaded chunks of an existing world, nothing is changed. */
+    static void inspectWorld(ServerLevel level) {
+        int tracks = 0, coveredStraight = 0, curves = 0, samples = 0, buried = 0, wet = 0;
+        java.util.Map<String, Integer> what = new java.util.TreeMap<>();
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        // the harness force-loads every chunk a line passes through, so those are exactly the chunks to check
+        for (long ck : level.getForcedChunks()) {
+            var chunk = level.getChunk(ChunkPos.getX(ck), ChunkPos.getZ(ck));
+            for (var be : chunk.getBlockEntities().values()) {
+                if (!(be instanceof com.simibubi.create.content.trains.track.TrackBlockEntity tbe)) continue;
+                for (var bc : tbe.getConnections().values()) {
+                    if (!bc.isPrimary()) continue;
+                    curves++;
+                    int n = Math.max(8, (int) Math.ceil(bc.getLength() * 4));
+                    for (int k = 0; k <= n; k++) {
+                        Vec3 at = bc.getPosition(k / (double) n);
+                        samples++;
+                        var st = level.getBlockState(p.set(Math.floor(at.x), Math.floor(at.y + 0.05), Math.floor(at.z)));
+                        var above = level.getBlockState(p.set(Math.floor(at.x), Math.floor(at.y + 1.05), Math.floor(at.z)));
+                        boolean trackish = st.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock
+                                || st.getBlock() instanceof com.simibubi.create.content.trains.track.FakeTrackBlock;
+                        if (!trackish && st.blocksMotion()) { buried++; what.merge("rail inside " + st.getBlock().getName().getString(), 1, Integer::sum); }
+                        else if (above.blocksMotion() && !(above.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock)) { buried++; what.merge("covered by " + above.getBlock().getName().getString(), 1, Integer::sum); }
+                        if (!st.getFluidState().isEmpty()) wet++;
+                    }
+                }
+            }
+            // straight track blocks with something solid right on top of them
+            int minY = level.getMinBuildHeight();
+            for (int sec = 0; sec < chunk.getSections().length; sec++) {
+                var section = chunk.getSections()[sec];
+                if (section.hasOnlyAir()) continue;
+                for (int x = 0; x < 16; x++) for (int y = 0; y < 16; y++) for (int z = 0; z < 16; z++) {
+                    if (!(section.getBlockState(x, y, z).getBlock() instanceof com.simibubi.create.content.trains.track.TrackBlock)) continue;
+                    tracks++;
+                    p.set(chunk.getPos().getMinBlockX() + x, minY + sec * 16 + y + 1, chunk.getPos().getMinBlockZ() + z);
+                    var up = level.getBlockState(p);
+                    if (up.blocksMotion() && !(up.getBlock() instanceof com.simibubi.create.content.trains.track.ITrackBlock)) {
+                        coveredStraight++; what.merge("track block covered by " + up.getBlock().getName().getString(), 1, Integer::sum);
+                    }
+                }
+            }
+        }
+        log.printf("inspect-only: %d track blocks, %d of them with a solid block on top; %d curves, %d samples, %d buried or covered, %d in water%n",
+                tracks, coveredStraight, curves, samples, buried, wet);
+        what.forEach((k, v) -> log.println("   " + k + ": " + v));
+        log.println("done");
+        log.close();
+        level.getServer().halt(false);
+        log = null;
     }
 
     static void graphCheck(String name, Vec3 a, Vec3 b, double planned) {

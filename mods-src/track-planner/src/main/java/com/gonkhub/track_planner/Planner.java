@@ -18,14 +18,19 @@ import java.util.PriorityQueue;
  *     rough cost-to-goal for every cell and a band a few chunks wide around the best rough route;
  *  1. horizontal route: A* over (x, z, heading) using only Create-legal moves, guided by stage 0;
  *  2. height profile: dynamic programming over each anchor's height, within each move's climb limit,
- *     pricing embankments, bridges, cuts and tunnels.
+ *     preferring track on the ground, pricing track that floats above it, cuttings and tunnels.
  */
 public final class Planner {
 
     public static final class Weights {
         public double track = 1.0, turn = 3.0, rough = 1.5, water = 2.0;
-        public double fill = 0.35, bridge = 3.0, cut = 0.5, tunnel = 4.0, climb = 2.0, goalHeight = 2.0;
-        public int maxEmbankment = 6, clearance = 5;
+        /** per block of track, per block of height it floats above the ground (nothing is built under it) */
+        public double lift = 0.6;
+        /** per block of track over water, on top of lift above the lowest allowed height */
+        public double overWater = 1.0;
+        public double cut = 0.5, tunnel = 4.0, climb = 2.0, goalHeight = 2.0;
+        /** blocks cleared above the rails for trains; a cutting deeper than this is priced as a tunnel */
+        public int clearance = 5;
     }
 
     public record Anchor(int x, int y, int z, int dir) {
@@ -244,7 +249,7 @@ public final class Planner {
         return c;
     }
 
-    /** Stage 2 cost of a move from height y0 climbing dy: earthworks under and around the track. */
+    /** Stage 2 cost of a move from height y0 climbing dy: how far the track floats, how much ground is dug away. */
     double profileCost(int x, int z, int y0, int dy, Move m) {
         double c = Math.abs(dy) * w.climb;
         int n = m.samples().length;
@@ -254,14 +259,16 @@ public final class Planner {
             double ty = y0 + dy * (i + 1) / (double) n;
             int g = terrain.ground(sx, sz);
             int water = terrain.water(sx, sz);
+            // the rails rest on block ty - 1 when the track lies on the ground
+            double above = ty - 1 - g;
             if (water != Integer.MIN_VALUE) {
-                if (ty < water + 1) c += 500; // the deck has to sit at or above the water surface
-                c += step * (w.bridge + (ty - water) * 0.05);
-            } else if (ty - 1 > g) {
-                double fill = ty - 1 - g;
-                c += step * (fill <= w.maxEmbankment ? fill * w.fill : w.bridge + w.maxEmbankment * w.fill);
-            } else if (ty - 1 < g) {
-                double depth = g - (ty - 1);
+                // over water the track must clear the surface; it then floats, nothing is built under it
+                if (ty < water + 1) return Double.POSITIVE_INFINITY;
+                c += step * (w.overWater + (ty - water - 1) * w.lift);
+            } else if (above > 0) {
+                c += step * above * w.lift;
+            } else if (above < 0) {
+                double depth = -above;
                 c += step * (depth <= w.clearance ? depth * w.cut : w.tunnel + w.clearance * w.cut);
             }
         }

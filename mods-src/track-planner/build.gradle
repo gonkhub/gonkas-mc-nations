@@ -90,6 +90,10 @@ neoForge {
             programArgument '--nogui'
             sourceSet = sourceSets.harness
             systemProperty 'track_planner.harness', 'true'
+            // -Pcases=c1_autotrack_case1,c2_600 runs only those cases
+            systemProperty 'track_planner.cases', project.findProperty('cases') ?: ''
+            // -PinspectOnly=true checks the track already in run/world and changes nothing
+            systemProperty 'track_planner.inspectOnly', project.findProperty('inspectOnly') ?: 'false'
         }
         // Screenshots of a built world: copy run/world to run/saves/tracks first, write run/viewpoints.txt.
         // Headless: xvfb-run with Mesa's software OpenGL (see harness/Camera.java).
