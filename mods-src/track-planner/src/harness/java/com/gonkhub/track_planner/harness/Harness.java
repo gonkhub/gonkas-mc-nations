@@ -39,13 +39,17 @@ public final class Harness {
     static int ticks;
 
     /** Offsets from world spawn. map = also write a before-heightmap of the area for plotting. */
-    record Case(String name, int sx, int sz, int gx, int gz, boolean map) {}
+    record Case(String name, int sx, int sz, int gx, int gz, boolean map) {
+        /** b* cases go through the blueprint path: plan, save, load back, build from the loaded copy */
+        boolean blueprint() { return name.startsWith("b"); }
+    }
 
     static final List<Case> CASES = List.of(
             new Case("c1_autotrack_case1", 0, 0, 110, 80, true),
             new Case("c2_600", 0, 0, 450, -400, true),
             new Case("c3_autotrack_case6", -300, -300, -1300, -1100, false),
-            new Case("c4_3km", 300, 300, 2800, 1900, false));
+            new Case("c4_3km", 300, 300, 2800, 1900, false),
+            new Case("b1_blueprint", -20, -20, -260, 140, true));
 
     @SubscribeEvent
     static void started(ServerStartedEvent e) throws Exception {
@@ -126,8 +130,22 @@ public final class Harness {
             }
         }
 
-        // ---- build ----
-        Builder.Result r = Builder.build(level, plan, w);
+        // ---- build (b* cases: through a blueprint saved and loaded back, as a player's would be) ----
+        Builder.Result r;
+        if (c.blueprint()) {
+            com.gonkhub.track_planner.Blueprint bp = com.gonkhub.track_planner.Blueprint.of(
+                    com.gonkhub.track_planner.Blueprints.get(level.getServer()).nextId(), "harness", plan, start);
+            com.gonkhub.track_planner.Blueprints.get(level.getServer()).add(level.getServer(), bp);
+            var loaded = com.gonkhub.track_planner.Blueprint.load(bp.save());
+            boolean same = loaded.anchors().equals(plan.anchors()) && loaded.moves().equals(plan.moves())
+                    && loaded.forClient().equals(bp.forClient());
+            log.printf("blueprint #%d: %d pieces for the client (%d bytes as NBT), about %d track items; save/load round trip identical: %s%n",
+                    bp.id(), bp.forClient().getList("pieces", 10).size(), bp.forClient().sizeInBytes(), bp.trackItems(), same);
+            r = com.gonkhub.track_planner.TrackPlanner.buildBlueprint(level, loaded);
+            log.println("blueprints left after building it: " + com.gonkhub.track_planner.Blueprints.get(level.getServer()).all().size());
+        } else {
+            r = Builder.build(level, plan, w);
+        }
         log.printf("build: earthworks %d ms, track %d ms; %d placements, %d refused by Create; %d track items%n",
                 r.earthworksMs, r.trackMs, r.placements, r.refused, r.trackItems);
         r.blocks.forEach((k, v) -> log.println("   " + k + ": " + v));

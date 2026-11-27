@@ -101,6 +101,8 @@ neoForge {
             client()
             sourceSet = sourceSets.harness
             systemProperty 'track_planner.camera', 'true'
+            // -PcameraBlueprint="sdx sdz gdx gdz": plan a blueprint (offsets from spawn) and shoot its ghost instead of viewpoints.txt
+            systemProperty 'track_planner.cameraBlueprint', project.findProperty('cameraBlueprint') ?: ''
             programArguments.addAll '--quickPlaySingleplayer', 'tracks', '--width', '1600', '--height', '900'
         }
         configureEach {

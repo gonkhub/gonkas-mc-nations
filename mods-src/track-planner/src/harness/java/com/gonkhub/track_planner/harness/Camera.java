@@ -1,7 +1,12 @@
 package com.gonkhub.track_planner.harness;
 
 import com.gonkhub.track_planner.TrackPlanner;
+import com.gonkhub.track_planner.Blueprint;
+import com.gonkhub.track_planner.Moves;
+import com.gonkhub.track_planner.Planner;
+import com.gonkhub.track_planner.Terrain;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.client.Screenshot;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -27,7 +32,7 @@ import java.util.List;
 public final class Camera {
     record View(String name, double x, double y, double z, float yaw, float pitch) {}
 
-    static List<View> views;
+    static volatile List<View> views;
     static int index = -1, wait, settled;
     static boolean setUp;
 
@@ -37,6 +42,15 @@ public final class Camera {
         Minecraft mc = Minecraft.getInstance();
         MinecraftServer server = mc.getSingleplayerServer();
         if (mc.level == null || mc.player == null || server == null) return;
+        String ghost = System.getProperty("track_planner.cameraBlueprint", "");
+        if (views == null && !ghost.isEmpty()) {
+            // plan a blueprint on the integrated server, then look at its ghost from three places along it
+            views = List.of();
+            String[] g = ghost.trim().split("\\s+");
+            server.execute(() -> views = ghostViews(server, Integer.parseInt(g[0]), Integer.parseInt(g[1]), Integer.parseInt(g[2]), Integer.parseInt(g[3])));
+            return;
+        }
+        if (views != null && views.isEmpty()) return;
         if (views == null) {
             views = new ArrayList<>();
             for (String line : Files.readAllLines(Path.of("viewpoints.txt"))) {
@@ -70,6 +84,29 @@ public final class Camera {
             System.out.println("[camera] " + v.name() + " after " + wait + " ticks");
             next(mc, server);
         }
+    }
+
+    static List<View> ghostViews(MinecraftServer server, int sdx, int sdz, int gdx, int gdz) {
+        ServerLevel level = server.overworld();
+        BlockPos spawn = level.getSharedSpawnPos();
+        Terrain real = new Terrain(level, Terrain.Mode.LOAD_CHUNKS);
+        int sx = spawn.getX() + sdx, sz = spawn.getZ() + sdz, gx = spawn.getX() + gdx, gz = spawn.getZ() + gdz;
+        BlockPos start = new BlockPos(sx, real.surface(sx, sz) + 1, sz), goal = new BlockPos(gx, real.surface(gx, gz) + 1, gz);
+        Blueprint b = TrackPlanner.planBlueprint(level, start, goal, "camera", m -> System.out.println("[camera] " + m.getString()));
+        List<View> out = new ArrayList<>();
+        if (b == null) return out;
+        int i = 0;
+        for (double f : new double[]{0.2, 0.5, 0.8}) {
+            Planner.Anchor a = b.anchors().get((int) (f * (b.anchors().size() - 1)));
+            int[] d = Moves.DIR[a.dir()];
+            double len = Math.hypot(d[0], d[1]), fx = d[0] / len, fz = d[1] / len;
+            double cx = a.x() + 0.5 - fx * 16 - fz * 10, cz = a.z() + 0.5 - fz * 16 + fx * 10, cy = a.y() + 11;
+            double vx = a.x() + 0.5 + fx * 8 - cx, vy = a.y() - cy, vz = a.z() + 0.5 + fz * 8 - cz;
+            float yaw = (float) Math.toDegrees(Math.atan2(-vx, vz)), pitch = (float) -Math.toDegrees(Math.atan2(vy, Math.hypot(vx, vz)));
+            out.add(new View("ghost_" + (++i), cx, cy, cz, yaw, pitch));
+        }
+        System.out.println("[camera] ghost blueprint #" + b.id() + " planned, " + out.size() + " views");
+        return out;
     }
 
     static void next(Minecraft mc, MinecraftServer server) {
