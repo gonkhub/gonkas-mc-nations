@@ -62,27 +62,37 @@ public final class Terrain {
 
     public int seaLevel() { return sea; }
 
+    /** Chunks asked for and chunks received by the running prefetch, for progress reports. */
+    public volatile int prefetchTotal, prefetchDone;
+
     /**
      * Brings the given chunks to at least the NOISE stage, generated in parallel on the world generation
-     * threads. This prototype waits on the server thread while it runs (the harness measures how long);
-     * a release would spread it over ticks instead.
+     * threads. Off the server thread (the planner thread) this asks for them in batches and waits for each
+     * batch itself, so the server keeps ticking; the requests go through the server's own task queue. On the
+     * server thread (tests, the old synchronous path) it has to run that queue itself while it waits.
      */
     public long prefetch(LongCollection chunks) {
         if (mode != Mode.PREFETCH) return 0;
         long t0 = System.nanoTime();
         ServerChunkCache source = level.getChunkSource();
+        boolean serverThread = level.getServer().isSameThread();
         List<Long> todo = new ArrayList<>();
         for (long c : chunks) if (!fetched.containsKey(c)) todo.add(c);
-        for (int from = 0; from < todo.size(); from += 256) {
-            List<Long> batch = todo.subList(from, Math.min(todo.size(), from + 256));
+        prefetchTotal = todo.size();
+        prefetchDone = 0;
+        int batchSize = serverThread ? 256 : 64;
+        for (int from = 0; from < todo.size(); from += batchSize) {
+            List<Long> batch = todo.subList(from, Math.min(todo.size(), from + batchSize));
             List<CompletableFuture<ChunkResult<ChunkAccess>>> futures = new ArrayList<>();
             for (long c : batch) futures.add(source.getChunkFuture(ChunkPos.getX(c), ChunkPos.getZ(c), ChunkStatus.NOISE, true));
             CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
-            while (!all.isDone()) if (!source.pollTask()) LockSupport.parkNanos(50_000);
+            if (serverThread) while (!all.isDone()) { if (!source.pollTask()) LockSupport.parkNanos(50_000); }
+            else all.join();
             for (int i = 0; i < batch.size(); i++) {
                 ChunkAccess chunk = futures.get(i).join().orElse(null);
                 if (chunk != null) fetched.put((long) batch.get(i), chunk);
             }
+            prefetchDone += batch.size();
         }
         return (System.nanoTime() - t0) / 1_000_000;
     }

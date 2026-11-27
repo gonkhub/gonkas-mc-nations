@@ -44,9 +44,14 @@ public final class RailPlannerItem extends Item {
             return InteractionResult.CONSUME;
         }
         stack.remove(TrackPlanner.PLAN_START.get());
-        player.displayClientMessage(Component.literal("Planning " + start.toShortString() + " to " + at.toShortString() + "...")
+        if (PlanJobs.busy(player.getUUID())) {
+            player.displayClientMessage(Component.literal("Your last line is still being planned.").withStyle(ChatFormatting.RED), true);
+            return InteractionResult.CONSUME;
+        }
+        player.displayClientMessage(Component.literal("Planning " + start.toShortString() + " to " + at.toShortString() + " in the background...")
                 .withStyle(ChatFormatting.GRAY), true);
-        TrackPlanner.planBlueprint((ServerLevel) level, start, at, player.getName().getString(), msg -> player.sendSystemMessage(msg));
+        BlockPos from = start;
+        PlanJobs.submit((ServerLevel) level, () -> new PlanJobs.Ends(from, -1, at), player.getName().getString(), player.getUUID(), player::sendSystemMessage);
         return InteractionResult.CONSUME;
     }
 

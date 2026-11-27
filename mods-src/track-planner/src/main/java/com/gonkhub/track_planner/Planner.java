@@ -70,6 +70,10 @@ public final class Planner {
 
     public Terrain terrain() { return terrain; }
 
+    private volatile String stage = "starting";
+    /** What the planner is doing now, for progress messages. */
+    public String stage() { return stage; }
+
     /**
      * @param start    the first track block
      * @param startDirs headings the line may leave start on, as a bit mask (bit d = Moves.DIR[d]); -1 for any
@@ -79,6 +83,7 @@ public final class Planner {
         int sx = start.getX(), sz = start.getZ(), gx = goal.getX(), gz = goal.getZ();
 
         // ---- stage 0: corridor ----
+        stage = "finding a corridor";
         long t0 = System.nanoTime();
         int cx0 = Math.floorDiv(Math.min(sx, gx) - MARGIN, CELL), cz0 = Math.floorDiv(Math.min(sz, gz) - MARGIN, CELL);
         int cw = Math.floorDiv(Math.max(sx, gx) + MARGIN, CELL) - cx0 + 1, ch = Math.floorDiv(Math.max(sz, gz) + MARGIN, CELL) - cz0 + 1;
@@ -127,6 +132,7 @@ public final class Planner {
         for (int i = 0; i < cw; i++) for (int j = 0; j < ch; j++)
             if (band[i * ch + j]) bandChunks.add(net.minecraft.world.level.ChunkPos.asLong(cx0 + i, cz0 + j));
         st.prefetchChunks = bandChunks.size();
+        stage = "loading terrain";
         st.prefetchMs = terrain.prefetch(bandChunks);
         int maxLen = com.simibubi.create.infrastructure.config.AllConfigs.server().trains.maxTrackPlacementLength.get();
         st.maxPlacement = maxLen;
@@ -142,6 +148,7 @@ public final class Planner {
             return Math.max(octile, coarse);
         };
         valley.clear();
+        stage = "choosing a route";
         Plan bestPlan = null;
         double bestTotal = Double.POSITIVE_INFINITY;
         for (int pass = 0; pass < w.valleyPasses; pass++) {

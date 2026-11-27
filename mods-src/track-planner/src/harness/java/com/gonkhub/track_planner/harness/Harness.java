@@ -42,6 +42,8 @@ public final class Harness {
     record Case(String name, int sx, int sz, int gx, int gz, boolean map) {
         /** b* cases go through the blueprint path: plan, save, load back, build from the loaded copy */
         boolean blueprint() { return name.startsWith("b"); }
+        /** a* cases plan in the background while the server ticks, then build the blueprint */
+        boolean async() { return name.startsWith("a"); }
     }
 
     static final List<Case> CASES = List.of(
@@ -49,7 +51,8 @@ public final class Harness {
             new Case("c2_600", 0, 0, 450, -400, true),
             new Case("c3_autotrack_case6", -300, -300, -1300, -1100, false),
             new Case("c4_3km", 300, 300, 2800, 1900, false),
-            new Case("b1_blueprint", -20, -20, -260, 140, true));
+            new Case("b1_blueprint", -20, -20, -260, 140, true),
+            new Case("a4_async_3km", 300, 300, 2800, 1900, false));
 
     @SubscribeEvent
     static void started(ServerStartedEvent e) throws Exception {
@@ -63,6 +66,7 @@ public final class Harness {
         String only = System.getProperty("track_planner.cases", "");
         for (Case c : CASES) {
             if (!only.isEmpty() && !Arrays.asList(only.split(",")).contains(c.name())) continue;
+            if (c.async()) { startAsync(level, spawn, c); continue; }
             try { run(level, spawn, c); }
             catch (Throwable t) { log.println("CRASH in " + c.name()); t.printStackTrace(log); }
         }
@@ -330,9 +334,74 @@ public final class Harness {
         log.printf("train route start -> end: %s (planned %.0f)%n", d.containsKey(nb) ? String.format("%.0f blocks of rail", d.get(nb)) : "NOT CONNECTED", planned);
     }
 
+    // ---- background planning while the server ticks ----
+    static volatile boolean asyncPending;
+    static long tickStart, asyncStart, slowTicks, tickCount, tickNanos, maxTick, lastPre, maxGap, longGaps;
+
+    static void startAsync(ServerLevel level, BlockPos spawn, Case c) {
+        log.println("\n=== " + c);
+        Terrain real = new Terrain(level, Terrain.Mode.LOAD_CHUNKS);
+        int sx = spawn.getX() + c.sx(), sz = spawn.getZ() + c.sz(), gx = spawn.getX() + c.gx(), gz = spawn.getZ() + c.gz();
+        BlockPos start = new BlockPos(sx, real.surface(sx, sz) + 1, sz), goal = new BlockPos(gx, real.surface(gx, gz) + 1, gz);
+        log.printf("start %s, goal %s, straight-line %.0f blocks; planning on the planner thread while the server ticks%n",
+                start.toShortString(), goal.toShortString(), Math.hypot(gx - sx, gz - sz));
+        asyncPending = true;
+        asyncStart = System.nanoTime();
+        com.gonkhub.track_planner.PlanJobs.submit(level, () -> new com.gonkhub.track_planner.PlanJobs.Ends(start, -1, goal), "harness", null,
+                m -> log.println("planner said: " + m.getString())).thenAccept(b -> {
+            asyncPending = false;
+            double secs = (System.nanoTime() - asyncStart) / 1e9;
+            log.printf("server ticks while planning: %d ticks in %.1f s (%.1f per second, 20 is full speed), slowest tick %.1f ms, average %.2f ms, %d over 50 ms%n",
+                    tickCount, secs, tickCount / secs, maxTick / 1e6, tickCount == 0 ? 0 : tickNanos / 1e6 / tickCount, slowTicks);
+            log.printf("longest gap between ticks: %.0f ms; gaps over 100 ms: %d%n", maxGap / 1e6, longGaps);
+            if (b == null) { log.println("FAILED: no blueprint"); return; }
+            // build it the way /trackplan build does, a little each tick, and time the ticks again
+            resetTicks();
+            asyncPending = true;
+            asyncStart = System.nanoTime();
+            com.gonkhub.track_planner.TrackPlanner.buildBlueprintGradually(level, b, null, m -> log.println("builder said: " + m.getString())).thenAccept(r -> {
+                asyncPending = false;
+                double bsecs = (System.nanoTime() - asyncStart) / 1e9;
+                log.printf("server ticks while building: %d ticks in %.1f s (%.1f per second), slowest tick %.1f ms, average %.2f ms, %d over 50 ms; longest gap %.0f ms, %d over 100 ms%n",
+                        tickCount, bsecs, tickCount / bsecs, maxTick / 1e6, tickCount == 0 ? 0 : tickNanos / 1e6 / tickCount, slowTicks, maxGap / 1e6, longGaps);
+                log.printf("build: earthworks %d ms, track %d ms (spread over ticks); %d placements, %d refused by Create; %d track items%n",
+                        r.earthworksMs, r.trackMs, r.placements, r.refused, r.trackItems);
+                r.refusals.forEach(x -> log.println("   REFUSED " + x));
+                inspect(level, b.plan(), real);
+                for (long ch : r.chunks) level.setChunkForced(ChunkPos.getX(ch), ChunkPos.getZ(ch), true);
+                Vec3 a = Vec3.atBottomCenterOf(b.anchors().get(0).pos()), z = Vec3.atBottomCenterOf(b.anchors().get(b.anchors().size() - 1).pos());
+                later.add(() -> graphCheck(c.name(), a, z, b.length()));
+                later.add(() -> { log.println("--- after 20 s of game time: " + c.name()); inspect(level, b.plan(), real); });
+                ticks = 0;
+            });
+        });
+    }
+
+    static void resetTicks() { slowTicks = tickCount = tickNanos = maxTick = lastPre = maxGap = longGaps = 0; }
+
+    @SubscribeEvent
+    static void tickStart(ServerTickEvent.Pre e) {
+        tickStart = System.nanoTime();
+        // time from one tick's start to the next: 50 ms when the server keeps up
+        if (asyncPending && lastPre != 0) {
+            long gap = tickStart - lastPre;
+            if (gap > 150_000_000L) log.printf("   long gap %.0f ms before a tick during: %s%n", gap / 1e6, com.gonkhub.track_planner.BuildJobs.state());
+            maxGap = Math.max(maxGap, gap);
+            if (gap > 100_000_000L) longGaps++;
+        }
+        lastPre = tickStart;
+    }
+
     @SubscribeEvent
     static void tick(ServerTickEvent.Post e) {
         if (log == null) return;
+        if (asyncPending) {
+            long d = System.nanoTime() - tickStart;
+            tickCount++; tickNanos += d; maxTick = Math.max(maxTick, d);
+            if (d > 50_000_000L) slowTicks++;
+            if (d > 100_000_000L) log.printf("   slow tick %.0f ms during: %s%n", d / 1e6, com.gonkhub.track_planner.BuildJobs.state());
+            return;
+        }
         if (++ticks == 400) {
             later.forEach(Runnable::run);
             log.println("\ndone");

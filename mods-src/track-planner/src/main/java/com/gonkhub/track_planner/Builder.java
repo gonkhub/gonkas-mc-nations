@@ -54,82 +54,153 @@ public final class Builder {
         public final List<Long> chunks = new ArrayList<>();
     }
 
+    /** Builds the whole plan now, on this (the server) thread. */
     public static Result build(ServerLevel level, Plan plan, Planner.Weights w) {
-        Result r = new Result();
-        int maxLen = com.simibubi.create.infrastructure.config.AllConfigs.server().trains.maxTrackPlacementLength.get();
-        List<Anchor> anchors = plan.anchors();
-        List<Move> moves = plan.moves();
+        Task t = new Task(level, plan, w);
+        while (!t.step(Long.MAX_VALUE)) { }
+        return t.result();
+    }
 
-        // ---- which columns the line occupies, and the track height in each ----
-        Long2IntLinkedOpenHashMap core = new Long2IntLinkedOpenHashMap();   // under the rails
-        Long2IntLinkedOpenHashMap halo = new Long2IntLinkedOpenHashMap();   // one block either side
-        core.put(ChunkPos.asLong(anchors.get(0).x(), anchors.get(0).z()), anchors.get(0).y());
-        for (int i = 0; i < moves.size(); i++) {
-            Anchor a = anchors.get(i), b = anchors.get(i + 1);
-            int[][] s = moves.get(i).samples();
-            for (int j = 0; j < s.length; j++) {
-                int y = (int) Math.floor(a.y() + (b.y() - a.y()) * (j + 1) / (double) s.length);
-                core.put(ChunkPos.asLong(a.x() + s[j][0], a.z() + s[j][1]), y);
-            }
-        }
-        core.forEach((k, y) -> {
-            int x = ChunkPos.getX(k), z = ChunkPos.getZ(k);
-            for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-                long n = ChunkPos.asLong(x + dx, z + dz);
-                if (!core.containsKey(n) && !halo.containsKey(n)) halo.put(n, y.intValue());
-            }
-        });
-        core.keySet().forEach(k -> {
-            long c = ChunkPos.asLong(ChunkPos.getX(k) >> 4, ChunkPos.getZ(k) >> 4);
-            if (!r.chunks.contains(c)) r.chunks.add(c);
-        });
+    /**
+     * A build that can be done a little at a time: step() works until a deadline and returns, and picks up
+     * where it stopped next time. In order: clear the gauge along the planned line, lay the track through
+     * Create's own placement, then clear again along the curves Create actually laid. Server thread only;
+     * the chunks it touches must be loaded (see chunks()).
+     */
+    public static final class Task {
+        final ServerLevel level;
+        final Plan plan;
+        final Planner.Weights w;
+        final Result r = new Result();
+        final int maxLen;
+        final long[] cols;     // core columns first, then the halo either side
+        final int[] colY;
+        final it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet chunkSet = new it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet();
+        int phase, index, total;
+        FakePlayer player;
+        final BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
 
-        // ---- clear the loading gauge along the planned line (nothing is ever placed under the track) ----
-        long t0 = System.nanoTime();
-        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
-        for (Long2IntLinkedOpenHashMap cols : List.of(core, halo)) {
-            cols.forEach((k, ty) -> {
+        public Task(ServerLevel level, Plan plan, Planner.Weights w) {
+            this.level = level;
+            this.plan = plan;
+            this.w = w;
+            this.maxLen = com.simibubi.create.infrastructure.config.AllConfigs.server().trains.maxTrackPlacementLength.get();
+            List<Anchor> anchors = plan.anchors();
+            List<Move> moves = plan.moves();
+            // which columns the line occupies, and the track height in each
+            Long2IntLinkedOpenHashMap core = new Long2IntLinkedOpenHashMap();   // under the rails
+            Long2IntLinkedOpenHashMap halo = new Long2IntLinkedOpenHashMap();   // one block either side
+            core.put(ChunkPos.asLong(anchors.get(0).x(), anchors.get(0).z()), anchors.get(0).y());
+            for (int i = 0; i < moves.size(); i++) {
+                Anchor a = anchors.get(i), b = anchors.get(i + 1);
+                int[][] s = moves.get(i).samples();
+                for (int j = 0; j < s.length; j++) {
+                    int y = (int) Math.floor(a.y() + (b.y() - a.y()) * (j + 1) / (double) s.length);
+                    core.put(ChunkPos.asLong(a.x() + s[j][0], a.z() + s[j][1]), y);
+                }
+            }
+            core.forEach((k, y) -> {
                 int x = ChunkPos.getX(k), z = ChunkPos.getZ(k);
-                for (int y = ty; y < ty + w.clearance; y++) clear(level, r, p.set(x, y, z));
+                for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                    long n = ChunkPos.asLong(x + dx, z + dz);
+                    if (!core.containsKey(n) && !halo.containsKey(n)) halo.put(n, y.intValue());
+                }
             });
-        }
-        r.earthworksMs = (System.nanoTime() - t0) / 1_000_000;
-
-        // ---- track, through Create's own placement ----
-        long t1 = System.nanoTime();
-        FakePlayer player = new FakePlayer(level, new GameProfile(UUID.nameUUIDFromBytes("track_planner".getBytes()), "[Track Planner]"));
-        player.setGameMode(GameType.CREATIVE);
-        setTrack(level, anchors.get(0));
-        int i = 0;
-        while (i < moves.size()) {
-            // join runs of level straights on one heading into one placement, within Create's maxTrackPlacementLength
-            int j = i;
-            while (j + 1 < moves.size() && isLevelStraight(moves.get(j), anchors.get(j), anchors.get(j + 1))
-                    && isLevelStraight(moves.get(j + 1), anchors.get(j + 1), anchors.get(j + 2))
-                    && moves.get(j + 1).dir() == moves.get(i).dir()
-                    && Math.hypot(anchors.get(j + 2).x() - anchors.get(i).x(), anchors.get(j + 2).z() - anchors.get(i).z()) < maxLen - 1)
-                j++;
-            Anchor a = anchors.get(i), b = anchors.get(j + 1);
-            String refusal = connect(level, player, a, b, r);
-            r.placements++;
-            if (refusal != null) {
-                r.refused++;
-                r.refusals.add(String.format("%s %s(%d,%d,%d) -> (%d,%d,%d) dy=%d: %s", moves.get(i).kind(), j > i ? "x" + (j - i + 1) + " " : "",
-                        a.x(), a.y(), a.z(), b.x(), b.y(), b.z(), b.y() - a.y(), refusal));
+            cols = new long[core.size() + halo.size()];
+            colY = new int[cols.length];
+            int i = 0;
+            for (var m : List.of(core, halo))
+                for (var e : m.long2IntEntrySet()) { cols[i] = e.getLongKey(); colY[i++] = e.getIntValue(); }
+            for (long k : core.keySet()) {
+                long c = ChunkPos.asLong(ChunkPos.getX(k) >> 4, ChunkPos.getZ(k) >> 4);
+                if (!r.chunks.contains(c)) r.chunks.add(c);
             }
-            i = j + 1;
+            // curves bow a little off the sampled line, so load one chunk either side as well
+            for (long k : cols) {
+                int cx = ChunkPos.getX(k) >> 4, cz = ChunkPos.getZ(k) >> 4;
+                for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) chunkSet.add(ChunkPos.asLong(cx + dx, cz + dz));
+            }
+            total = cols.length + moves.size() + anchors.size();
         }
-        r.trackMs = (System.nanoTime() - t1) / 1_000_000;
 
-        // ---- clear along the curves Create actually laid: a Bezier rises and falls unlike the straight-line
-        // estimate above, and any block left at rail height hides the rails ----
-        long t2 = System.nanoTime();
-        for (Anchor a : anchors)
-            if (level.getBlockEntity(a.pos()) instanceof TrackBlockEntity tbe)
-                for (BezierConnection bc : tbe.getConnections().values())
-                    if (bc.isPrimary()) clearAlong(level, r, bc, w.clearance);
-        r.earthworksMs += (System.nanoTime() - t2) / 1_000_000;
-        return r;
+        /** Every chunk this build reads or writes. */
+        public it.unimi.dsi.fastutil.longs.LongCollection chunks() { return chunkSet; }
+
+        public Result result() { return r; }
+
+        /** Units of work that took over 50 ms, for diagnostics. */
+        final List<String> slow = new ArrayList<>();
+        public List<String> slowUnits() { return slow; }
+
+        void timed(long t0, String what) {
+            long ms = (System.nanoTime() - t0) / 1_000_000;
+            if (ms > 50) slow.add(ms + " ms: " + what);
+        }
+
+        /** Rough share of the work done, 0 to 1. */
+        public double progress() {
+            int done = phase == 0 ? index : phase == 1 ? cols.length + index : phase == 2 ? cols.length + plan.moves().size() + index : total;
+            return Math.min(1, done / (double) total);
+        }
+
+        /** Works until the deadline (System.nanoTime()) or the end. True once the whole line is built. */
+        public boolean step(long deadline) {
+            List<Anchor> anchors = plan.anchors();
+            List<Move> moves = plan.moves();
+            while (phase < 3) {
+                if (System.nanoTime() > deadline) return false;
+                long t0 = System.nanoTime();
+                if (phase == 0) {
+                    // clear the loading gauge along the planned line (nothing is ever placed under the track)
+                    if (index >= cols.length) { phase = 1; index = 0; continue; }
+                    int x = ChunkPos.getX(cols[index]), z = ChunkPos.getZ(cols[index]), ty = colY[index];
+                    for (int y = ty; y < ty + w.clearance; y++) clear(level, r, p.set(x, y, z));
+                    index++;
+                    r.earthworksMs += (System.nanoTime() - t0) / 1_000_000;
+                    timed(t0, "clearing column " + x + "," + z);
+                } else if (phase == 1) {
+                    // track, through Create's own placement
+                    if (player == null) {
+                        player = new FakePlayer(level, new GameProfile(UUID.nameUUIDFromBytes("track_planner".getBytes()), "[Track Planner]"));
+                        player.setGameMode(GameType.CREATIVE);
+                        setTrack(level, anchors.get(0));
+                    }
+                    if (index >= moves.size()) { phase = 2; index = 0; continue; }
+                    // join runs of level straights on one heading into one placement, within Create's maxTrackPlacementLength
+                    int i = index, j = i;
+                    while (j + 1 < moves.size() && isLevelStraight(moves.get(j), anchors.get(j), anchors.get(j + 1))
+                            && isLevelStraight(moves.get(j + 1), anchors.get(j + 1), anchors.get(j + 2))
+                            && moves.get(j + 1).dir() == moves.get(i).dir()
+                            && Math.hypot(anchors.get(j + 2).x() - anchors.get(i).x(), anchors.get(j + 2).z() - anchors.get(i).z()) < maxLen - 1)
+                        j++;
+                    Anchor a = anchors.get(i), b = anchors.get(j + 1);
+                    String refusal = connect(level, player, a, b, r);
+                    r.placements++;
+                    if (refusal != null) {
+                        r.refused++;
+                        r.refusals.add(String.format("%s %s(%d,%d,%d) -> (%d,%d,%d) dy=%d: %s", moves.get(i).kind(), j > i ? "x" + (j - i + 1) + " " : "",
+                                a.x(), a.y(), a.z(), b.x(), b.y(), b.z(), b.y() - a.y(), refusal));
+                    }
+                    index = j + 1;
+                    r.trackMs += (System.nanoTime() - t0) / 1_000_000;
+                    timed(t0, "placing " + moves.get(i).kind() + (j > i ? " x" + (j - i + 1) : "") + " " + a.pos().toShortString() + " -> " + b.pos().toShortString());
+                    // one track piece per call when building gradually: every new track block makes Create walk
+                    // its rail network on the next tick, and hundreds at once stall that tick
+                    if (deadline != Long.MAX_VALUE) return false;
+                } else {
+                    // clear along the curves Create actually laid: a Bezier rises and falls unlike the
+                    // straight-line estimate above, and any block left at rail height hides the rails
+                    if (index >= anchors.size()) { phase = 3; break; }
+                    if (level.getBlockEntity(anchors.get(index).pos()) instanceof TrackBlockEntity tbe)
+                        for (BezierConnection bc : tbe.getConnections().values())
+                            if (bc.isPrimary()) clearAlong(level, r, bc, w.clearance);
+                    timed(t0, "clearing along curves at " + anchors.get(index).pos().toShortString());
+                    index++;
+                    r.earthworksMs += (System.nanoTime() - t0) / 1_000_000;
+                }
+            }
+            return true;
+        }
     }
 
     /** Every block a train would pass through along a curve, one block either side of the rails. */

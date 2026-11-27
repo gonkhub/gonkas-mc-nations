@@ -31,7 +31,7 @@ public record MapPlanRequest(int sx, int sz, int gx, int gz) implements CustomPa
             ByteBufCodecs.VAR_INT, MapPlanRequest::sx, ByteBufCodecs.VAR_INT, MapPlanRequest::sz,
             ByteBufCodecs.VAR_INT, MapPlanRequest::gx, ByteBufCodecs.VAR_INT, MapPlanRequest::gz, MapPlanRequest::new);
 
-    /** Planning still pauses the server while it loads terrain, so players get one plan at a time, this far apart. */
+    /** Plans run in the background, but they still use world generation threads: one per player at a time, this far apart. */
     static final long COOLDOWN_MS = 10_000;
     static final int MAX_DISTANCE = 4000;
     static final Map<UUID, Long> lastPlan = new HashMap<>();
@@ -59,10 +59,17 @@ public record MapPlanRequest(int sx, int sz, int gx, int gz) implements CustomPa
                     .withStyle(ChatFormatting.RED));
             return;
         }
+        if (PlanJobs.busy(player.getUUID())) {
+            player.sendSystemMessage(Component.literal("Track Planner: your last line is still being planned.").withStyle(ChatFormatting.RED));
+            return;
+        }
         lastPlan.put(player.getUUID(), now);
-        LineEnd start = end(level, r.sx, r.sz), goal = end(level, r.gx, r.gz);
-        player.sendSystemMessage(Component.literal("Track Planner: planning " + start.describe() + " to " + goal.describe() + "...").withStyle(ChatFormatting.GRAY));
-        TrackPlanner.planBlueprint(level, start.pos(), start.dirs(), goal.pos(), player.getName().getString(), player::sendSystemMessage);
+        player.sendSystemMessage(Component.literal(String.format("Track Planner: planning a %.0f-block line in the background...", distance)).withStyle(ChatFormatting.GRAY));
+        // finding the two ends loads their chunks, so it happens on the planner thread with the rest
+        PlanJobs.submit(level, () -> {
+            LineEnd start = end(level, r.sx, r.sz), goal = end(level, r.gx, r.gz);
+            return new PlanJobs.Ends(start.pos(), start.dirs(), goal.pos());
+        }, player.getName().getString(), player.getUUID(), player::sendSystemMessage);
     }
 
     /** A line end: the track block position, the headings it may leave on, and whether it's an existing track. */

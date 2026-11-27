@@ -73,10 +73,15 @@ public final class TrackPlanner {
         return planBlueprint(level, start, -1, goal, owner, report);
     }
 
-    /** As above, leaving start only on the given headings (a bit mask over Moves.DIR; -1 for any). */
+    /** As above, leaving start only on the given headings (a bit mask over Moves.DIR; -1 for any). Runs here, on the calling thread. */
     public static Blueprint planBlueprint(ServerLevel level, BlockPos start, int startDirs, BlockPos goal, String owner, Consumer<Component> report) {
-        Planner.Weights w = new Planner.Weights();
-        Planner.Plan plan = new Planner(level, Terrain.Mode.PREFETCH, w).plan(start, startDirs, goal);
+        long t0 = System.nanoTime();
+        Planner.Plan plan = new Planner(level, Terrain.Mode.PREFETCH, new Planner.Weights()).plan(start, startDirs, goal);
+        return saveBlueprint(level, plan, start, goal, owner, (System.nanoTime() - t0) / 1e9, report);
+    }
+
+    /** Saves a finished plan as a blueprint and reports it. Server thread only. Null when the plan failed. */
+    static Blueprint saveBlueprint(ServerLevel level, Planner.Plan plan, BlockPos start, BlockPos goal, String owner, double seconds, Consumer<Component> report) {
         var st = plan.stats();
         if (st.failure != null) {
             report.accept(Component.literal("Track Planner: " + st.failure).withStyle(ChatFormatting.RED));
@@ -89,11 +94,21 @@ public final class TrackPlanner {
         report.accept(Component.literal(String.format(
                 "Blueprint #%d: %.0f blocks of track, about %d track items, ends %d blocks from the target. Planned in %.1f s. /trackplan build %d to build it.",
                 b.id(), b.length(), b.trackItems(), Math.max(Math.abs(end.x() - goal.getX()), Math.abs(end.z() - goal.getZ())),
-                (st.corridorMs + st.prefetchMs + st.routeMs + st.profileMs) / 1000.0, b.id())).withStyle(ChatFormatting.AQUA));
+                seconds, b.id())).withStyle(ChatFormatting.AQUA));
         return b;
     }
 
     /** Builds a blueprint (creative-style for now) and removes it. */
+    /** Builds a blueprint over many ticks (loading its chunks first) and removes it when done. Server thread. */
+    public static java.util.concurrent.CompletableFuture<Builder.Result> buildBlueprintGradually(ServerLevel level, Blueprint b, java.util.UUID requester,
+                                                                                               Consumer<Component> report) {
+        return BuildJobs.start(level, b, requester, report).thenApply(r -> {
+            Blueprints.get(level.getServer()).remove(level.getServer(), b.id());
+            return r;
+        });
+    }
+
+    /** Builds a blueprint all at once, now (tests). */
     public static Builder.Result buildBlueprint(ServerLevel level, Blueprint b) {
         Builder.Result r = Builder.build(level, b.plan(), new Planner.Weights());
         Blueprints.get(level.getServer()).remove(level.getServer(), b.id());
@@ -105,8 +120,12 @@ public final class TrackPlanner {
                 .then(Commands.argument("from", BlockPosArgument.blockPos())
                         .then(Commands.argument("to", BlockPosArgument.blockPos())
                                 .executes(c -> {
-                                    planBlueprint(c.getSource().getLevel(), BlockPosArgument.getLoadedBlockPos(c, "from"),
-                                            BlockPosArgument.getBlockPos(c, "to"), c.getSource().getTextName(), m -> c.getSource().sendSuccess(() -> m, true));
+                                    BlockPos from = BlockPosArgument.getLoadedBlockPos(c, "from"), to = BlockPosArgument.getBlockPos(c, "to");
+                                    var src = c.getSource();
+                                    src.sendSuccess(() -> Component.literal("Track Planner: planning " + from.toShortString() + " to " + to.toShortString()
+                                            + " in the background...").withStyle(ChatFormatting.GRAY), false);
+                                    PlanJobs.submit(src.getLevel(), () -> new PlanJobs.Ends(from, -1, to), src.getTextName(),
+                                            src.getPlayer() == null ? null : src.getPlayer().getUUID(), m -> src.sendSuccess(() -> m, true));
                                     return 1;
                                 })))
                 .then(Commands.literal("blueprints").executes(TrackPlanner::list))
@@ -143,10 +162,13 @@ public final class TrackPlanner {
             c.getSource().sendFailure(Component.literal("No such blueprint."));
             return 0;
         }
-        Builder.Result r = buildBlueprint(c.getSource().getLevel(), b);
-        c.getSource().sendSuccess(() -> Component.literal(String.format("Built blueprint #%d: %d placements, %d refused by Create, %d track items.",
-                b.id(), r.placements, r.refused, r.trackItems)), true);
-        r.refusals.stream().limit(5).forEach(s -> c.getSource().sendSystemMessage(Component.literal("  refused: " + s)));
+        if (BuildJobs.building(b.id())) {
+            c.getSource().sendFailure(Component.literal("Blueprint #" + b.id() + " is already being built."));
+            return 0;
+        }
+        var src = c.getSource();
+        src.sendSuccess(() -> Component.literal("Building blueprint #" + b.id() + " a little each tick...").withStyle(ChatFormatting.GRAY), true);
+        buildBlueprintGradually(src.getLevel(), b, src.getPlayer() == null ? null : src.getPlayer().getUUID(), m -> src.sendSuccess(() -> m, true));
         return 1;
     }
 }
