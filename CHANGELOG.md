@@ -20,6 +20,18 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.14.1 - 2026-11-27
+
+- Monsters are fairer. A level 6 monster now has exactly stock Minecraft health and damage;
+  lower levels, near spawn, are weaker than vanilla. Difficulty climbs more gently with
+  distance: the first ring of continents around the starter one is now levels 8-11.
+- No champion monsters (Thaumaturge or Mob Champions) on the starter continent. Champions
+  already there lose their bonuses the next time they load.
+- Elsewhere a monster can only be one kind of champion, and Thaumaturge champions get
+  stronger with distance instead of a flat +100 health everywhere.
+- Long-lived monsters that were over-scaled by older versions are brought back in line.
+
+
 ## 0.14.0 - 2026-11-27
 
 - Continents nobody has reached yet are wilder: regions now have hazards (freezing, poisoned
