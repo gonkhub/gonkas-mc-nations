@@ -20,6 +20,15 @@ record lives in `docs/`, which deliberately stays out of this repo.
 - _nothing yet_
 
 
+## 0.14.2 - 2026-11-28
+
+- Monsters and animals a region lists on its map card now actually spawn there. Since
+  regions got their own mob lists, the vanilla monsters they rolled (creepers, zombies,
+  skeletons, spiders and the rest) never spawned naturally, and rolled animals never came
+  back after a chunk was first made. Abundant ones are now properly common, so expect
+  busier nights everywhere.
+
+
 ## 0.14.1 - 2026-11-27
 
 - Monsters are fairer. A level 6 monster now has exactly stock Minecraft health and damage;
